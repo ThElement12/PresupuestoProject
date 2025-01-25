@@ -1,7 +1,7 @@
 const express = require("express");
-const mysql = require("mysql2");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const fs = require('fs');
 
 dotenv.config();
 
@@ -11,19 +11,16 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-const db = mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB_NAME,
-});
-
-db.connect((err) => {
-    if (err) {
-        console.error("Error al conectar a la base de datos:", err);
-    } else {
-        console.log("Conectado a la base de datos");
-    }
+fs.readdir('./src/routes', (err, files) => {
+  if(err){
+    console.error(err);
+    return
+  }else{
+    files.forEach(file => {
+      path = './src/routes/'+ file;
+      app.use(require(path))
+    });
+  }
 });
 
 app.get("/", (req, res) => {
