@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "Servidor backend para la aplicacion de presupuesto mensual",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js"
