@@ -31,7 +31,7 @@ router.post('/nuevo-mes', (req, res) => {
   var total = porcentaje_ahorros + porcentaje_gastos + porcentaje_gustos
 
   if (total !== 100) {
-    res.send(400).send('Los porcentajes deben ser iguales a 100')
+    return res.status(400).json({ msg:'Los porcentajes deben ser iguales a 100'})
   }
   db.query('INSERT INTO mes (usuario_id, porcentajeGastos, porcentajeGustos, porcentajeAhorros) VALUES (?, ?, ?, ?);', [id, porcentaje_gastos, porcentaje_gustos, porcentaje_ahorros], (err, rows) => {
     if (!err) {
