@@ -3,7 +3,7 @@ import db from "../database.js";
 
 const router = express.Router();
 
-
+//Obtener todas las quincenas
 router.get('/quincena', (req, res) => {
   db.query('SELECT * FROM Quincena', (err, rows) => {
     if (!err) {
@@ -13,7 +13,7 @@ router.get('/quincena', (req, res) => {
     }
   })
 })
-
+//Obtener una quincena en especifico
 router.get('/quicena/:id', (req, res) => {
   const { id } = req.params;
   db.query('SELECT * FROM Quincena WHERE id = ?', [id], (err, rows) => {
@@ -25,6 +25,7 @@ router.get('/quicena/:id', (req, res) => {
   })
 })
 
+//Registrar nueva quincena
 router.post('/nueva-quincena', (req, res) => {
   const { id_mes, fecha_inicio, fecha_fin } = req.body;
   const inicio = new Date(fecha_inicio);
