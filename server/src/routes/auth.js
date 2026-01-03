@@ -4,6 +4,7 @@ import db from '../database.js';
 
 const router = express.Router();
 
+//Registrar nuevo usuario
 router.post('/register', async (req, res) => {
   const { nombre, correo, pass } = req.body;
 
@@ -24,6 +25,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
+//Loguearse un nuevo usuario
 router.post('/login', async (req, res) => {
   const { correo, pass } = req.body;
 
