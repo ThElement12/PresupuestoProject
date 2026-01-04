@@ -1,71 +1,87 @@
 use presupuesto_mensual;
 
--- Habilitar la verificación de claves foráneas
-SET FOREIGN_KEY_CHECKS = 0;
-
--- Crear tabla Usuario
+-- =========================
+-- Tabla Usuario
+-- =========================
 CREATE TABLE Usuario (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    correo VARCHAR(100) UNIQUE NOT NULL,
-    pass VARCHAR(255) NOT NULL
-) ENGINE=InnoDB COMMENT='Usuarios registrados en el sistema';
+                         id INT AUTO_INCREMENT PRIMARY KEY,
+                         nombre VARCHAR(255) NOT NULL,
+                         correo VARCHAR(255) NOT NULL UNIQUE,
+                         pass VARCHAR(255) NOT NULL
+) ENGINE=InnoDB;
 
--- Crear tabla Mes
-CREATE TABLE Mes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT NOT NULL,
-    porcentajeGastos FLOAT NOT NULL,
-    porcentajeGustos FLOAT NOT NULL,
-    porcentajeAhorros FLOAT NOT NULL,
-    FOREIGN KEY (usuario_id) REFERENCES Usuario(id) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB COMMENT='Configuración de presupuesto mensual para un usuario';
+-- =========================
+-- Tabla TipoMovimiento
+-- =========================
+CREATE TABLE TipoMovimiento (
+                                id INT AUTO_INCREMENT PRIMARY KEY,
+                                movimiento VARCHAR(100) NOT NULL,
+                                CONSTRAINT uq_tipomovimiento_movimiento UNIQUE (movimiento)
+) ENGINE=InnoDB;
 
--- Crear tabla Quincena
-CREATE TABLE Quincena (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    mes_id INT NOT NULL,
-    tasa_dolar FLOAT NOT NULL,
-    fecha_inicio DATE NOT NULL,
-    fecha_fin DATE NOT NULL,
-    FOREIGN KEY (mes_id) REFERENCES Mes(id) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB COMMENT='Información sobre cada quincena en un mes específico';
-
--- Crear tabla Movimiento
-CREATE TABLE Movimiento (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    descripcion VARCHAR(255) NOT NULL,
-    cantidad FLOAT NOT NULL,
-    dolar BOOLEAN NOT NULL
-) ENGINE=InnoDB COMMENT='Registra ingresos o gastos asociados a un usuario';
-
--- Crear tabla Metodo
+-- =========================
+-- Tabla Metodo
+-- =========================
 CREATE TABLE Metodo (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    metodo_pago VARCHAR(100) NOT NULL UNIQUE
-) ENGINE=InnoDB COMMENT='Métodos de pago utilizados en los gastos';
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        usuario_id INT NOT NULL,
+                        metodo_pago VARCHAR(100) NOT NULL,
+                        CONSTRAINT fk_metodo_usuario
+                            FOREIGN KEY (usuario_id) REFERENCES Usuario(id)
+                                ON DELETE CASCADE
+) ENGINE=InnoDB;
 
--- Crear tabla Gasto
-CREATE TABLE Gasto (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    movimiento_id INT NOT NULL,
-    metodo_id INT NOT NULL,
-    quincena_id INT NOT NULL,
-    pagado BOOLEAN NOT NULL,
-    FOREIGN KEY (movimiento_id) REFERENCES Movimiento(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (metodo_id) REFERENCES Metodo(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (quincena_id) REFERENCES Quincena(id) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB COMMENT='Gastos realizados, asociados a un movimiento y una quincena';
+-- =========================
+-- Tabla Mes
+-- =========================
+CREATE TABLE Mes (
+                     id INT AUTO_INCREMENT PRIMARY KEY,
+                     usuario_id INT NOT NULL,
+                     porcentajeGastos DECIMAL(5,2) NOT NULL,
+                     porcentajeGustos DECIMAL(5,2) NOT NULL,
+                     porcentajeAhorros DECIMAL(5,2) NOT NULL,
+                     CONSTRAINT fk_mes_usuario
+                         FOREIGN KEY (usuario_id) REFERENCES Usuario(id)
+                             ON DELETE CASCADE
+) ENGINE=InnoDB;
 
--- Crear tabla Ingreso
-CREATE TABLE Ingreso (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    movimiento_id INT NOT NULL,
-    quincena_id INT NOT NULL,
-    fijo BOOLEAN NOT NULL,
-    FOREIGN KEY (movimiento_id) REFERENCES Movimiento(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (quincena_id) REFERENCES Quincena(id) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB COMMENT='Ingresos registrados asociados a un movimiento y una quincena';
+-- =========================
+-- Tabla Periodo
+-- =========================
+CREATE TABLE Periodo (
+                         id INT AUTO_INCREMENT PRIMARY KEY,
+                         mes_id INT NOT NULL,
+                         tasa_dolar DECIMAL(10,4) NOT NULL,
+                         fecha_inicio DATE NOT NULL,
+                         fecha_fin DATE NOT NULL,
+                         CONSTRAINT fk_periodo_mes
+                             FOREIGN KEY (mes_id) REFERENCES Mes(id)
+                                 ON DELETE CASCADE
+) ENGINE=InnoDB;
 
--- Habilitar la verificación de claves foráneas
-SET FOREIGN_KEY_CHECKS = 1;
+-- =========================
+-- Tabla Movimiento
+-- =========================
+CREATE TABLE Movimiento (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            TipoMovimiento_id INT NOT NULL,
+                            Periodo_id INT NOT NULL,
+                            Metodo_id INT NOT NULL,
+                            descripcion VARCHAR(255),
+                            isFijo BOOLEAN NOT NULL,
+                            cantidad DECIMAL(12,2) NOT NULL,
+                            dolar BOOLEAN NOT NULL,
+                            CONSTRAINT fk_movimiento_tipomovimiento
+                                FOREIGN KEY (TipoMovimiento_id) REFERENCES TipoMovimiento(id),
+                            CONSTRAINT fk_movimiento_periodo
+                                FOREIGN KEY (Periodo_id) REFERENCES Periodo(id)
+                                    ON DELETE CASCADE,
+                            CONSTRAINT fk_movimiento_metodo
+                                FOREIGN KEY (Metodo_id) REFERENCES Metodo(id)
+) ENGINE=InnoDB;
+
+INSERT INTO TipoMovimiento (movimiento)
+VALUES
+    ('Ingreso'),
+    ('Gasto');
+
