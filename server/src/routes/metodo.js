@@ -3,6 +3,7 @@ import db from "../database.js";
 
 const router = express.Router();
 
+//Obtener todos los metodos de pago de un usuario especifico
 router.get('/metodo/:usuario_id', (req, res) => {
   const {usuario_id} = req.params
 
@@ -16,6 +17,7 @@ router.get('/metodo/:usuario_id', (req, res) => {
 
 })
 
+//Registrar un nuevo metodo de Pago
 router.post('/nuevo_metodo', (req, res) => {
   const {usuario_id, metodo_pago} = req.body
 
@@ -28,7 +30,7 @@ router.post('/nuevo_metodo', (req, res) => {
   })
 })
 
-
+//Borrar un metodo de pago
 router.delete('/borrar_metodo/:id_metodo', (req, res) => {
   const { id_metodo } = req.params 
   db.query('DELETE FROM Metodo WHERE id = ?', [id_metodo], (err, rows) => {
