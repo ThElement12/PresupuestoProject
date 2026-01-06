@@ -16,6 +16,8 @@ router.get('/periodo/:id_mes', (req, res) => {
 })
 
 //Registrar un nuevo periodo en el mes
+//Por ahora el date esta en formato mm-dd-yyyy
+//TODO: Cambiar el formato que acepte cualquier date pero envie el correcto a la base de datos
 router.post('/nuevo_periodo', (req, res) => {
   const { id_mes, tasa_dolar, fecha_inicio, fecha_fin } = req.body;
   const inicio = new Date(fecha_inicio);
@@ -24,7 +26,7 @@ router.post('/nuevo_periodo', (req, res) => {
   if (isNaN(inicio) || isNaN(fin)) {
     res.status(400).json({ error: "Fechas inválidas." });
   }
-  db.query('INSERT INTO Periodo (mes_id, tasa_dolar, fecha_inicio, fecha_fin) VALUES (?, ?, ?, ?);', [id_mes, tasa_dolar, fecha_inicio, fecha_fin], (err, rows) => {
+  db.query('INSERT INTO Periodo (mes_id, tasa_dolar, fecha_inicio, fecha_fin) VALUES (?, ?, ?, ?);', [id_mes, tasa_dolar, inicio, fin], (err, rows) => {
     if (!err) {
       res.status(200).json({ msg: "Periodo registrado satisfactoriamente" })
     } else {
