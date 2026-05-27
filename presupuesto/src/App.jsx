@@ -1,35 +1,59 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
+import Layout from './components/Layout';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import NuevoMes from './pages/NuevoMes';
+import MesDetail from './pages/MesDetail';
+import PeriodoDetail from './pages/PeriodoDetail';
+import Metodos from './pages/Metodos';
+import NuevoMetodo from './pages/NuevoMetodo';
+import AdminPanel from './pages/AdminPanel';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route
+            path="/dashboard"
+            element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>}
+          />
+          <Route
+            path="/mes/nuevo"
+            element={<ProtectedRoute><Layout><NuevoMes /></Layout></ProtectedRoute>}
+          />
+          <Route
+            path="/mes/:id"
+            element={<ProtectedRoute><Layout><MesDetail /></Layout></ProtectedRoute>}
+          />
+          <Route
+            path="/periodo/:id"
+            element={<ProtectedRoute><Layout><PeriodoDetail /></Layout></ProtectedRoute>}
+          />
+          <Route
+            path="/metodos"
+            element={<ProtectedRoute><Layout><Metodos /></Layout></ProtectedRoute>}
+          />
+          <Route
+            path="/metodo/nuevo"
+            element={<ProtectedRoute><Layout><NuevoMetodo /></Layout></ProtectedRoute>}
+          />
+          <Route
+            path="/admin"
+            element={<ProtectedRoute><AdminRoute><Layout><AdminPanel /></Layout></AdminRoute></ProtectedRoute>}
+          />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
 }
 
-export default App
+export default App;

@@ -1,18 +1,13 @@
-import mysql from "mysql2";
+import mysql from "mysql2/promise";
 
-const db = mysql.createConnection({
+const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
 });
 
-db.connect((err) => {
-  if (err) {
-      console.error("Error al conectar a la base de datos:", err);
-  } else {
-      console.log("Conectado a la base de datos");
-  }
-});
-
-export default db;
+export default pool;
