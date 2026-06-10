@@ -75,7 +75,7 @@ CREATE TABLE Movimiento (
   id INT AUTO_INCREMENT PRIMARY KEY,
   tipoMovimiento_id INT NOT NULL,
   periodo_id INT NOT NULL,
-  metodo_id INT NOT NULL,
+  metodo_id INT DEFAULT NULL,
   descripcion VARCHAR(255),
   isFijo BOOLEAN NOT NULL DEFAULT FALSE,
   monto_usd DECIMAL(12,2) NOT NULL DEFAULT 0.00,

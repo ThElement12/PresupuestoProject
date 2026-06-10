@@ -39,7 +39,7 @@ router.get('/dashboard/:usuario_id', async (req, res) => {
         `SELECT m.*, tm.movimiento AS tipo, mt.metodo_pago, mt.es_efectivo
          FROM Movimiento m
          JOIN TipoMovimiento tm ON m.tipoMovimiento_id = tm.id
-         JOIN Metodo mt ON m.metodo_id = mt.id
+         LEFT JOIN Metodo mt ON m.metodo_id = mt.id
          WHERE m.Periodo_id = ?`,
         [periodo.id]
       );

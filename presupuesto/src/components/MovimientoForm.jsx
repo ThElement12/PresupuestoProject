@@ -36,7 +36,7 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
       periodo_id: periodoId,
       monto_usd: parseFloat(form.monto_usd) || 0,
       monto_rd: parseFloat(form.monto_rd) || 0,
-      metodo_id: parseInt(form.metodo_id),
+      metodo_id: parseInt(form.tipoMovimiento_id) === 2 ? parseInt(form.metodo_id) : null,
       tipoMovimiento_id: parseInt(form.tipoMovimiento_id),
       fecha_pago: form.fecha_pago || null,
     };
@@ -71,23 +71,25 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
             ))}
           </select>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Método</label>
-          <select
-            name="metodo_id"
-            value={form.metodo_id}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm"
-            required
-          >
-            <option value="">Seleccionar...</option>
-            {metodos.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.metodo_pago}
-              </option>
-            ))}
-          </select>
-        </div>
+        {parseInt(form.tipoMovimiento_id) === 2 && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Método</label>
+            <select
+              name="metodo_id"
+              value={form.metodo_id}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm"
+              required
+            >
+              <option value="">Seleccionar...</option>
+              {metodos.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.metodo_pago}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700">Descripción</label>

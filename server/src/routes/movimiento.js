@@ -23,7 +23,7 @@ router.get('/movimiento/:id_periodo', async (req, res) => {
       `SELECT m.*, tm.movimiento AS tipo, mt.metodo_pago, mt.es_efectivo
        FROM Movimiento m
        JOIN TipoMovimiento tm ON m.tipoMovimiento_id = tm.id
-       JOIN Metodo mt ON m.metodo_id = mt.id
+       LEFT JOIN Metodo mt ON m.metodo_id = mt.id
        WHERE m.periodo_id = ?`,
       [id_periodo]
     );
@@ -46,7 +46,7 @@ router.post('/nuevo_movimiento', async (req, res) => {
     const [result] = await db.query(
       `INSERT INTO Movimiento (tipoMovimiento_id, periodo_id, metodo_id, descripcion, isFijo, monto_usd, monto_rd, fecha_pago, pagado)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [tipoMovimiento_id, periodo_id, metodo_id, descripcion, isFijo, monto_usd || 0, monto_rd || 0, fecha_pago || null, pagado || false]
+      [tipoMovimiento_id, periodo_id, metodo_id || null, descripcion, isFijo, monto_usd || 0, monto_rd || 0, fecha_pago || null, pagado || false]
     );
     res.status(200).json({ msg: "Movimiento registrado satisfactoriamente", id: result.insertId });
   } catch (err) {
@@ -61,7 +61,7 @@ router.put('/editar_movimiento/:id', async (req, res) => {
   try {
     await db.query(
       `UPDATE Movimiento SET tipoMovimiento_id = ?, periodo_id = ?, metodo_id = ?, descripcion = ?, isFijo = ?, monto_usd = ?, monto_rd = ?, fecha_pago = ?, pagado = ? WHERE id = ?`,
-      [tipoMovimiento_id, periodo_id, metodo_id, descripcion, isFijo, monto_usd || 0, monto_rd || 0, fecha_pago || null, pagado || false, id]
+      [tipoMovimiento_id, periodo_id, metodo_id || null, descripcion, isFijo, monto_usd || 0, monto_rd || 0, fecha_pago || null, pagado || false, id]
     );
     res.status(200).json({ msg: "Movimiento actualizado satisfactoriamente" });
   } catch (err) {
