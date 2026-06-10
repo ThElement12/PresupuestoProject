@@ -29,6 +29,9 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
     setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
+  const selectedMetodo = metodos.find((m) => m.id === parseInt(form.metodo_id));
+  const esEfectivo = selectedMetodo?.es_efectivo === true;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const data = {
@@ -39,6 +42,8 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
       metodo_id: parseInt(form.tipoMovimiento_id) === 2 ? parseInt(form.metodo_id) : null,
       tipoMovimiento_id: parseInt(form.tipoMovimiento_id),
       fecha_pago: form.fecha_pago || null,
+      isFijo: esEfectivo ? false : form.isFijo,
+      pagado: esEfectivo ? false : form.pagado,
     };
 
     try {
@@ -140,26 +145,28 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
           />
         </div>
       </div>
-      <div className="flex items-center gap-4">
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            name="isFijo"
-            checked={form.isFijo}
-            onChange={handleChange}
-          />
-          Movimiento fijo
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            name="pagado"
-            checked={form.pagado}
-            onChange={handleChange}
-          />
-          Pagado
-        </label>
-      </div>
+      {!esEfectivo && (
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="isFijo"
+              checked={form.isFijo}
+              onChange={handleChange}
+            />
+            Movimiento fijo
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="pagado"
+              checked={form.pagado}
+              onChange={handleChange}
+            />
+            Pagado
+          </label>
+        </div>
+      )}
       <div className="flex gap-2">
         <button
           type="submit"

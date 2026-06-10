@@ -81,12 +81,14 @@ export default function PeriodoDetail() {
     return <div className="text-center text-gray-500">Cargando...</div>;
   }
 
-  const ingresos = movimientos
-    .filter((m) => m.tipo === 'Ingreso' || m.tipoMovimiento_id === 1)
-    .reduce((sum, m) => sum + parseFloat(m.totalRD || 0), 0);
-  const gastos = movimientos
-    .filter((m) => m.tipo === 'Gasto' || m.tipoMovimiento_id === 2)
-    .reduce((sum, m) => sum + parseFloat(m.totalRD || 0), 0);
+  const ingresosArr = movimientos.filter((m) => m.tipo === 'Ingreso' || m.tipoMovimiento_id === 1);
+  const gastosArr = movimientos.filter((m) => m.tipo === 'Gasto' || m.tipoMovimiento_id === 2);
+  const gastosFijosArr = gastosArr.filter((m) => m.isFijo);
+  const gastosDinamicosArr = gastosArr.filter((m) => !m.isFijo);
+
+  const totalIngresos = ingresosArr.reduce((sum, m) => sum + parseFloat(m.totalRD || 0), 0);
+  const totalGastosFijos = gastosFijosArr.reduce((sum, m) => sum + parseFloat(m.totalRD || 0), 0);
+  const totalGastosDinamicos = gastosDinamicosArr.reduce((sum, m) => sum + parseFloat(m.totalRD || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -103,14 +105,18 @@ export default function PeriodoDetail() {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow p-4">
           <h3 className="text-gray-500 text-sm">Ingresos</h3>
-          <p className="text-xl font-bold text-green-600">RD$ {ingresos.toFixed(2)}</p>
+          <p className="text-xl font-bold text-green-600">RD$ {totalIngresos.toFixed(2)}</p>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="text-gray-500 text-sm">Gastos</h3>
-          <p className="text-xl font-bold text-red-600">RD$ {gastos.toFixed(2)}</p>
+          <h3 className="text-gray-500 text-sm">Gastos Fijos</h3>
+          <p className="text-xl font-bold text-red-600">RD$ {totalGastosFijos.toFixed(2)}</p>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4">
+          <h3 className="text-gray-500 text-sm">Gastos Dinámicos</h3>
+          <p className="text-xl font-bold text-orange-600">RD$ {totalGastosDinamicos.toFixed(2)}</p>
         </div>
         <div className="bg-white rounded-lg shadow p-4 border-2 border-green-200">
           <div className="flex justify-between items-center">
@@ -163,12 +169,19 @@ export default function PeriodoDetail() {
           />
         )}
 
-        <div className="mt-4">
-          <MovimientoList
-            movimientos={movimientos}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
+        <div className="mt-6">
+          <h3 className="text-md font-bold text-green-700 mb-2">Ingresos</h3>
+          <MovimientoList movimientos={ingresosArr} onEdit={handleEdit} onDelete={handleDelete} />
+        </div>
+
+        <div className="mt-6">
+          <h3 className="text-md font-bold text-red-700 mb-2">Gastos Fijos</h3>
+          <MovimientoList movimientos={gastosFijosArr} onEdit={handleEdit} onDelete={handleDelete} />
+        </div>
+
+        <div className="mt-6">
+          <h3 className="text-md font-bold text-orange-700 mb-2">Gastos Dinámicos</h3>
+          <MovimientoList movimientos={gastosDinamicosArr} onEdit={handleEdit} onDelete={handleDelete} />
         </div>
       </div>
     </div>
