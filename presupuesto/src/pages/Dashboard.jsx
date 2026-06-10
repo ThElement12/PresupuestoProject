@@ -42,7 +42,7 @@ export default function Dashboard() {
     );
   }
 
-  const { mes, periodos, resumen, porMetodo, efectivoRestante } = data;
+  const { mes, periodos, resumen, porMetodo, efectivoRestante, tarjetaRestante } = data;
   const periodoActual = periodos.find((p) => p.id === selectedPeriodo) || periodos[0];
 
   return (
@@ -77,7 +77,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-gray-500 text-sm font-medium">Ingresos</h3>
           <p className="text-2xl font-bold text-green-600">
@@ -91,15 +91,21 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-gray-500 text-sm font-medium">Balance</h3>
-          <p className={`text-2xl font-bold ${resumen.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-            RD$ {resumen.balance.toFixed(2)}
+          <h3 className="text-gray-500 text-sm font-medium">Balance Total</h3>
+          <p className={`text-2xl font-bold ${resumen.balanceTotal >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+            RD$ {resumen.balanceTotal.toFixed(2)}
           </p>
         </div>
         <div className="bg-white rounded-lg shadow p-6 border-2 border-green-200">
           <h3 className="text-gray-500 text-sm font-medium">Efectivo Restante</h3>
           <p className={`text-2xl font-bold ${efectivoRestante >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             RD$ {efectivoRestante.toFixed(2)}
+          </p>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6 border-2 border-blue-200">
+          <h3 className="text-gray-500 text-sm font-medium">Tarjeta/Banco Restante</h3>
+          <p className={`text-2xl font-bold ${tarjetaRestante >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+            RD$ {tarjetaRestante.toFixed(2)}
           </p>
         </div>
       </div>

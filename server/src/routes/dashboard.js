@@ -32,9 +32,11 @@ router.get('/dashboard/:usuario_id', async (req, res) => {
     const periodosConMovimientos = [];
     let totalIngresos = 0;
     let totalGastos = 0;
+    let totalEfectivoInicial = 0;
     const gastosPorMetodo = {};
 
     for (const periodo of periodos) {
+      totalEfectivoInicial += parseFloat(periodo.efectivo_inicial) || 0;
       const [movimientos] = await db.query(
         `SELECT m.*, tm.movimiento AS tipo, mt.metodo_pago, mt.es_efectivo
          FROM Movimiento m
@@ -87,10 +89,18 @@ router.get('/dashboard/:usuario_id', async (req, res) => {
       porcentaje: totalGastos > 0 ? (m.total / totalGastos) * 100 : 0,
     }));
 
-    const efectivo = porMetodo.find((m) => m.es_efectivo);
-    const efectivoRestante = efectivo
-      ? totalIngresos - (totalGastos - efectivo.total)
-      : totalIngresos - totalGastos;
+    let cashGastos = 0;
+    let noCashGastos = 0;
+    for (const m of porMetodo) {
+      if (m.es_efectivo) {
+        cashGastos += m.total;
+      } else {
+        noCashGastos += m.total;
+      }
+    }
+
+    const efectivoRestante = totalEfectivoInicial - cashGastos;
+    const tarjetaRestante = totalIngresos - noCashGastos;
 
     res.json({
       mes,
@@ -99,9 +109,12 @@ router.get('/dashboard/:usuario_id', async (req, res) => {
         totalIngresos,
         totalGastos,
         balance: totalIngresos - totalGastos,
+        balanceTotal: totalIngresos + totalEfectivoInicial - totalGastos,
+        totalEfectivoInicial,
       },
       porMetodo,
       efectivoRestante,
+      tarjetaRestante,
     });
   } catch (error) {
     console.error(error);

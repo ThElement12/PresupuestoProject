@@ -65,6 +65,7 @@ CREATE TABLE Periodo (
   mes_id INT NOT NULL,
   fecha_inicio DATE NOT NULL,
   fecha_fin DATE NOT NULL,
+  efectivo_inicial DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   CONSTRAINT fk_periodo_mes FOREIGN KEY (mes_id) REFERENCES Mes(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 

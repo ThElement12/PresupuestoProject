@@ -11,18 +11,22 @@ export default function PeriodoDetail() {
   const { usuario } = useAuth();
   const [movimientos, setMovimientos] = useState([]);
   const [metodos, setMetodos] = useState([]);
+  const [editEfectivo, setEditEfectivo] = useState(false);
+  const [efectivoInput, setEfectivoInput] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingMov, setEditingMov] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
     try {
-      const [movs, mets] = await Promise.all([
+      const [movs, mets, periodoInfo] = await Promise.all([
         api.getMovimientos(id),
         api.getMetodos(usuario.id),
+        api.getPeriodo(id),
       ]);
       setMovimientos(movs);
       setMetodos(mets);
+      setEfectivoInput(parseFloat(periodoInfo.efectivo_inicial || 0).toFixed(2));
     } catch (err) {
       console.error(err);
     }
@@ -31,6 +35,16 @@ export default function PeriodoDetail() {
   useEffect(() => {
     loadData().finally(() => setLoading(false));
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleEfectivoSave = async () => {
+    try {
+      await api.editarPeriodo(id, { efectivo_inicial: parseFloat(efectivoInput) || 0 });
+      setEditEfectivo(false);
+      loadData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
 
   const handleEdit = (mov) => {
     setEditingMov(mov);
@@ -89,7 +103,7 @@ export default function PeriodoDetail() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <div className="bg-white rounded-lg shadow p-4">
           <h3 className="text-gray-500 text-sm">Ingresos</h3>
           <p className="text-xl font-bold text-green-600">RD$ {ingresos.toFixed(2)}</p>
@@ -97,6 +111,32 @@ export default function PeriodoDetail() {
         <div className="bg-white rounded-lg shadow p-4">
           <h3 className="text-gray-500 text-sm">Gastos</h3>
           <p className="text-xl font-bold text-red-600">RD$ {gastos.toFixed(2)}</p>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 border-2 border-green-200">
+          <div className="flex justify-between items-center">
+            <h3 className="text-gray-500 text-sm font-medium">Efectivo en mano</h3>
+            {!editEfectivo ? (
+              <button onClick={() => setEditEfectivo(true)} className="text-blue-600 text-xs hover:underline">
+                Editar
+              </button>
+            ) : null}
+          </div>
+          {editEfectivo ? (
+            <div className="flex items-center gap-2 mt-1">
+              <input
+                type="number"
+                step="0.01"
+                value={efectivoInput}
+                onChange={(e) => setEfectivoInput(e.target.value)}
+                className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+                autoFocus
+              />
+              <button onClick={handleEfectivoSave} className="bg-blue-600 text-white px-2 py-1 rounded text-xs">Guardar</button>
+              <button onClick={() => setEditEfectivo(false)} className="text-gray-500 text-xs">Cancelar</button>
+            </div>
+          ) : (
+            <p className="text-xl font-bold text-green-700">RD$ {parseFloat(efectivoInput || 0).toFixed(2)}</p>
+          )}
         </div>
       </div>
 

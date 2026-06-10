@@ -15,7 +15,7 @@ router.get('/periodo/:id_mes', async (req, res) => {
 });
 
 router.post('/nuevo_periodo', async (req, res) => {
-  const { id_mes, fecha_inicio, fecha_fin } = req.body;
+  const { id_mes, fecha_inicio, fecha_fin, efectivo_inicial = 0 } = req.body;
   const inicio = new Date(fecha_inicio);
   const fin = new Date(fecha_fin);
 
@@ -24,8 +24,8 @@ router.post('/nuevo_periodo', async (req, res) => {
   }
   try {
     const [result] = await db.query(
-      'INSERT INTO Periodo (mes_id, fecha_inicio, fecha_fin) VALUES (?, ?, ?)',
-      [id_mes, inicio, fin]
+      'INSERT INTO Periodo (mes_id, fecha_inicio, fecha_fin, efectivo_inicial) VALUES (?, ?, ?, ?)',
+      [id_mes, inicio, fin, parseFloat(efectivo_inicial) || 0]
     );
     res.status(200).json({ msg: "Periodo registrado satisfactoriamente", id: result.insertId });
   } catch (err) {
@@ -36,16 +36,34 @@ router.post('/nuevo_periodo', async (req, res) => {
 
 router.put('/editar_periodo/:id', async (req, res) => {
   const { id } = req.params;
-  const { fecha_inicio, fecha_fin } = req.body;
+  const { fecha_inicio, fecha_fin, efectivo_inicial } = req.body;
   try {
+    const fields = [];
+    const values = [];
+    if (fecha_inicio !== undefined) { fields.push('fecha_inicio = ?'); values.push(fecha_inicio); }
+    if (fecha_fin !== undefined) { fields.push('fecha_fin = ?'); values.push(fecha_fin); }
+    if (efectivo_inicial !== undefined) { fields.push('efectivo_inicial = ?'); values.push(parseFloat(efectivo_inicial) || 0); }
+    if (fields.length === 0) return res.status(400).json({ msg: 'No hay campos para actualizar' });
     await db.query(
-      'UPDATE Periodo SET fecha_inicio = ?, fecha_fin = ? WHERE id = ?',
-      [fecha_inicio, fecha_fin, id]
+      `UPDATE Periodo SET ${fields.join(', ')} WHERE id = ?`,
+      [...values, id]
     );
     res.status(200).json({ msg: "Periodo actualizado satisfactoriamente" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ msg: 'Error al actualizar el periodo' });
+  }
+});
+
+router.get('/periodo/single/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [rows] = await db.query('SELECT * FROM Periodo WHERE id = ?', [id]);
+    if (rows.length === 0) return res.status(404).json({ msg: 'Periodo no encontrado' });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: 'Error al obtener el periodo' });
   }
 });
 
