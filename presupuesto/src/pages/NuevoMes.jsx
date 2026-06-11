@@ -13,6 +13,7 @@ export default function NuevoMes() {
     porcentaje_gastos: 50,
     porcentaje_gustos: 30,
     porcentaje_ahorros: 20,
+    efectivo_inicial: '',
   });
   const [error, setError] = useState('');
 
@@ -39,6 +40,7 @@ export default function NuevoMes() {
         porcentaje_gastos: parseFloat(form.porcentaje_gastos),
         porcentaje_gustos: parseFloat(form.porcentaje_gustos),
         porcentaje_ahorros: parseFloat(form.porcentaje_ahorros),
+        efectivo_inicial: parseFloat(form.efectivo_inicial) || 0,
       });
       navigate(`/periodo/${result.periodos[0]?.id}`);
     } catch (err) {
@@ -98,6 +100,21 @@ export default function NuevoMes() {
             <option value="quincenal">Quincenal (2 periodos)</option>
             <option value="semanal">Semanal (4-5 periodos)</option>
           </select>
+        </div>
+
+        <div>
+          <label className="block text-gray-700 text-sm font-medium mb-1">
+            Efectivo Inicial (RD$)
+          </label>
+          <input
+            type="number"
+            step="0.01"
+            name="efectivo_inicial"
+            value={form.efectivo_inicial}
+            onChange={handleChange}
+            placeholder="0.00"
+            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
 
         <div className="border-t pt-4">

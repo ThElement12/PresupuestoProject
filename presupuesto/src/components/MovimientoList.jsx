@@ -23,7 +23,7 @@ export default function MovimientoList({ movimientos, onEdit, onDelete }) {
                     Fijo
                   </span>
                 ) : null}
-                {mov.pagado ? (
+                {!isIngreso && (mov.pagado || mov.es_efectivo ? (
                   <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
                     Pagado
                   </span>
@@ -31,7 +31,7 @@ export default function MovimientoList({ movimientos, onEdit, onDelete }) {
                   <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">
                     Pendiente
                   </span>
-                )}
+                ))}
               </div>
               <div className="flex gap-3 text-sm text-gray-500 mt-1">
                 {parseFloat(mov.monto_usd) > 0 && <span>USD ${parseFloat(mov.monto_usd).toFixed(2)}</span>}

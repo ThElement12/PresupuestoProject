@@ -65,6 +65,7 @@ CREATE TABLE Periodo (
   mes_id INT NOT NULL,
   fecha_inicio DATE NOT NULL,
   fecha_fin DATE NOT NULL,
+  efectivo_inicial DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   CONSTRAINT fk_periodo_mes FOREIGN KEY (mes_id) REFERENCES Mes(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -75,7 +76,7 @@ CREATE TABLE Movimiento (
   id INT AUTO_INCREMENT PRIMARY KEY,
   tipoMovimiento_id INT NOT NULL,
   periodo_id INT NOT NULL,
-  metodo_id INT NOT NULL,
+  metodo_id INT DEFAULT NULL,
   descripcion VARCHAR(255),
   isFijo BOOLEAN NOT NULL DEFAULT FALSE,
   monto_usd DECIMAL(12,2) NOT NULL DEFAULT 0.00,

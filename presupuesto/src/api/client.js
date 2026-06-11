@@ -45,6 +45,7 @@ export const api = {
   borrarMes: (id) => request(`/borrar_mes/${id}`, { method: 'DELETE' }),
 
   getPeriodos: (mesId) => request(`/periodo/${mesId}`),
+  getPeriodo: (id) => request(`/periodo/single/${id}`),
   crearPeriodo: (data) => request('/nuevo_periodo', {
     method: 'POST',
     body: JSON.stringify(data),
