@@ -13,12 +13,38 @@ CREATE TABLE Usuario (
 ) ENGINE=InnoDB;
 
 -- =========================
+-- Tabla TransaccionEfectivo
+-- =========================
+CREATE TABLE TransaccionEfectivo (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  periodo_id INT NOT NULL,
+  tipo ENUM('deposito','retiro') NOT NULL,
+  monto DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  descripcion VARCHAR(255) DEFAULT NULL,
+  fecha DATE DEFAULT NULL,
+  CONSTRAINT fk_te_periodo FOREIGN KEY (periodo_id) REFERENCES Periodo(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- =========================
 -- Tabla Configuracion
 -- =========================
 CREATE TABLE Configuracion (
   id INT AUTO_INCREMENT PRIMARY KEY,
   clave VARCHAR(100) NOT NULL UNIQUE,
   valor VARCHAR(255) NOT NULL
+) ENGINE=InnoDB;
+
+-- =========================
+-- Tabla TransaccionEfectivo
+-- =========================
+CREATE TABLE TransaccionEfectivo (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  periodo_id INT NOT NULL,
+  tipo ENUM('deposito','retiro') NOT NULL,
+  monto DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  descripcion VARCHAR(255) DEFAULT NULL,
+  fecha DATE DEFAULT NULL,
+  CONSTRAINT fk_te_periodo FOREIGN KEY (periodo_id) REFERENCES Periodo(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 INSERT INTO Configuracion (clave, valor) VALUES ('tasa_dolar', '0.0000');
@@ -29,6 +55,19 @@ INSERT INTO Configuracion (clave, valor) VALUES ('tasa_dolar', '0.0000');
 CREATE TABLE TipoMovimiento (
   id INT AUTO_INCREMENT PRIMARY KEY,
   movimiento VARCHAR(100) NOT NULL UNIQUE
+) ENGINE=InnoDB;
+
+-- =========================
+-- Tabla TransaccionEfectivo
+-- =========================
+CREATE TABLE TransaccionEfectivo (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  periodo_id INT NOT NULL,
+  tipo ENUM('deposito','retiro') NOT NULL,
+  monto DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  descripcion VARCHAR(255) DEFAULT NULL,
+  fecha DATE DEFAULT NULL,
+  CONSTRAINT fk_te_periodo FOREIGN KEY (periodo_id) REFERENCES Periodo(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 INSERT INTO TipoMovimiento (movimiento) VALUES ('Ingreso'), ('Gasto');
@@ -45,6 +84,19 @@ CREATE TABLE Metodo (
 ) ENGINE=InnoDB;
 
 -- =========================
+-- Tabla TransaccionEfectivo
+-- =========================
+CREATE TABLE TransaccionEfectivo (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  periodo_id INT NOT NULL,
+  tipo ENUM('deposito','retiro') NOT NULL,
+  monto DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  descripcion VARCHAR(255) DEFAULT NULL,
+  fecha DATE DEFAULT NULL,
+  CONSTRAINT fk_te_periodo FOREIGN KEY (periodo_id) REFERENCES Periodo(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- =========================
 -- Tabla Mes
 -- =========================
 CREATE TABLE Mes (
@@ -58,6 +110,19 @@ CREATE TABLE Mes (
 ) ENGINE=InnoDB;
 
 -- =========================
+-- Tabla TransaccionEfectivo
+-- =========================
+CREATE TABLE TransaccionEfectivo (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  periodo_id INT NOT NULL,
+  tipo ENUM('deposito','retiro') NOT NULL,
+  monto DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  descripcion VARCHAR(255) DEFAULT NULL,
+  fecha DATE DEFAULT NULL,
+  CONSTRAINT fk_te_periodo FOREIGN KEY (periodo_id) REFERENCES Periodo(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- =========================
 -- Tabla Periodo
 -- =========================
 CREATE TABLE Periodo (
@@ -67,6 +132,19 @@ CREATE TABLE Periodo (
   fecha_fin DATE NOT NULL,
   efectivo_inicial DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   CONSTRAINT fk_periodo_mes FOREIGN KEY (mes_id) REFERENCES Mes(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- =========================
+-- Tabla TransaccionEfectivo
+-- =========================
+CREATE TABLE TransaccionEfectivo (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  periodo_id INT NOT NULL,
+  tipo ENUM('deposito','retiro') NOT NULL,
+  monto DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  descripcion VARCHAR(255) DEFAULT NULL,
+  fecha DATE DEFAULT NULL,
+  CONSTRAINT fk_te_periodo FOREIGN KEY (periodo_id) REFERENCES Periodo(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- =========================
@@ -86,4 +164,17 @@ CREATE TABLE Movimiento (
   CONSTRAINT fk_movimiento_tipomovimiento FOREIGN KEY (tipoMovimiento_id) REFERENCES TipoMovimiento(id),
   CONSTRAINT fk_movimiento_periodo FOREIGN KEY (periodo_id) REFERENCES Periodo(id) ON DELETE CASCADE,
   CONSTRAINT fk_movimiento_metodo FOREIGN KEY (metodo_id) REFERENCES Metodo(id)
+) ENGINE=InnoDB;
+
+-- =========================
+-- Tabla TransaccionEfectivo
+-- =========================
+CREATE TABLE TransaccionEfectivo (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  periodo_id INT NOT NULL,
+  tipo ENUM('deposito','retiro') NOT NULL,
+  monto DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  descripcion VARCHAR(255) DEFAULT NULL,
+  fecha DATE DEFAULT NULL,
+  CONSTRAINT fk_te_periodo FOREIGN KEY (periodo_id) REFERENCES Periodo(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

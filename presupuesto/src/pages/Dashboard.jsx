@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 import ProgressBars from '../components/ProgressBars';
 import MovimientoForm from '../components/MovimientoForm';
+import TransaccionForm from '../components/TransaccionForm';
 
 export default function Dashboard() {
   const { usuario } = useAuth();
@@ -17,6 +18,10 @@ export default function Dashboard() {
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [editEfectivo, setEditEfectivo] = useState(false);
   const [efectivoInput, setEfectivoInput] = useState('');
+
+  const [transacciones, setTransacciones] = useState([]);
+  const [showTransForm, setShowTransForm] = useState(false);
+  const [editingTrans, setEditingTrans] = useState(null);
 
   useEffect(() => {
     if (!usuario) return;
@@ -39,8 +44,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     setMovements(periodoActual?.movimientos || []);
+    setTransacciones(periodoActual?.transacciones || []);
     setShowForm(false);
     setEditingMov(null);
+    setShowTransForm(false);
+    setEditingTrans(null);
   }, [periodoActual]);
 
   const handleTogglePagado = async (movId, currentPagado) => {
@@ -79,6 +87,33 @@ export default function Dashboard() {
       await api.borrarMovimiento(movId);
       const movs = await api.getMovimientos(periodoActual.id);
       setMovements(movs);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleTransFormSave = async () => {
+    setShowTransForm(false);
+    setEditingTrans(null);
+    try {
+      const trans = await api.getTransaccionesEfectivo(periodoActual.id);
+      setTransacciones(trans);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleEditTrans = (trans) => {
+    setEditingTrans(trans);
+    setShowTransForm(true);
+  };
+
+  const handleDeleteTrans = async (transId) => {
+    if (!confirm('¿Borrar esta transacción?')) return;
+    try {
+      await api.borrarTransaccionEfectivo(transId);
+      const trans = await api.getTransaccionesEfectivo(periodoActual.id);
+      setTransacciones(trans);
     } catch (err) {
       alert(err.message);
     }
@@ -149,9 +184,20 @@ export default function Dashboard() {
     const noCashGastos = movements
       .filter((m) => m.tipo === 'Gasto' && !m.es_efectivo)
       .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0);
-    const efectivoRestante =
+    let efectivoRestante =
       parseFloat(periodoActual?.efectivo_inicial || 0) - cashGastos;
-    const tarjetaRestante = totalIngresos - noCashGastos;
+    let tarjetaRestante = totalIngresos - noCashGastos;
+
+    for (const t of transacciones) {
+      const monto = parseFloat(t.monto) || 0;
+      if (t.tipo === 'deposito') {
+        efectivoRestante -= monto;
+        tarjetaRestante += monto;
+      } else if (t.tipo === 'retiro') {
+        efectivoRestante += monto;
+        tarjetaRestante -= monto;
+      }
+    }
 
     return {
       totalIngresos,
@@ -161,7 +207,7 @@ export default function Dashboard() {
       efectivoRestante,
       tarjetaRestante,
     };
-  }, [movements, periodoActual]);
+  }, [movements, periodoActual, transacciones]);
 
   const {
     totalIngresos,
@@ -582,6 +628,81 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-bold text-gray-800">Depósitos y Retiros</h2>
+          <div className="flex items-center gap-3">
+            {!showTransForm && (
+              <button
+                onClick={() => { setEditingTrans(null); setShowTransForm(true); }}
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm"
+              >
+                Agregar Depósito/Retiro
+              </button>
+            )}
+          </div>
+        </div>
+
+        {showTransForm && (
+          <TransaccionForm
+            periodoId={periodoActual?.id}
+            initial={editingTrans || undefined}
+            onSave={handleTransFormSave}
+            onCancel={() => { setShowTransForm(false); setEditingTrans(null); }}
+          />
+        )}
+
+        {!showTransForm && transacciones.length === 0 ? (
+          <p className="text-gray-500 text-sm">No hay depósitos o retiros en este periodo.</p>
+        ) : null}
+
+        {!showTransForm && transacciones.length > 0 && (
+          <div className="space-y-2">
+            {transacciones.map((t) => (
+              <div
+                key={t.id}
+                className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-3"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span
+                    className={`inline-block w-2 h-2 rounded-full shrink-0 ${
+                      t.tipo === 'deposito' ? 'bg-blue-500' : 'bg-green-500'
+                    }`}
+                  />
+                  <span className="font-medium text-gray-800 truncate">{t.descripcion || 'Sin descripción'}</span>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded font-medium ${
+                      t.tipo === 'deposito'
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-green-100 text-green-700'
+                    }`}
+                  >
+                    {t.tipo === 'deposito' ? 'Depósito → Banco' : 'Retiro → Efectivo'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 shrink-0 ml-3">
+                  <span className="font-medium text-gray-700">
+                    RD$ {parseFloat(t.monto).toFixed(2)}
+                  </span>
+                  <button
+                    onClick={() => handleEditTrans(t)}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => handleDeleteTrans(t.id)}
+                    className="text-red-600 hover:text-red-800 text-sm"
+                  >
+                    Borrar
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
