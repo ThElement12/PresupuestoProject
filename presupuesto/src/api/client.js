@@ -55,6 +55,7 @@ export const api = {
     body: JSON.stringify(data),
   }),
   borrarPeriodo: (id) => request(`/borrar_periodo/${id}`, { method: 'DELETE' }),
+  limpiarPeriodo: (id) => request(`/limpiar-periodo/${id}`, { method: 'DELETE' }),
 
   getMovimientos: (periodoId) => request(`/movimiento/${periodoId}`),
   crearMovimiento: (data) => request('/nuevo_movimiento', {

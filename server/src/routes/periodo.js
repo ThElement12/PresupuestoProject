@@ -78,4 +78,16 @@ router.delete('/borrar_periodo/:id', async (req, res) => {
   }
 });
 
+router.delete('/limpiar-periodo/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('DELETE FROM Movimiento WHERE Periodo_id = ?', [id]);
+    await db.query('UPDATE Periodo SET efectivo_inicial = 0 WHERE id = ?', [id]);
+    res.json({ msg: 'Periodo limpiado satisfactoriamente' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: 'Error al limpiar el periodo' });
+  }
+});
+
 export default router;

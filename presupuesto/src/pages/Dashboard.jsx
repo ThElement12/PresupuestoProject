@@ -14,6 +14,9 @@ export default function Dashboard() {
   const [showForm, setShowForm] = useState(false);
   const [editingMov, setEditingMov] = useState(null);
   const [metodos, setMetodos] = useState([]);
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [editEfectivo, setEditEfectivo] = useState(false);
+  const [efectivoInput, setEfectivoInput] = useState('');
 
   useEffect(() => {
     if (!usuario) return;
@@ -79,6 +82,35 @@ export default function Dashboard() {
     } catch (err) {
       alert(err.message);
     }
+  };
+
+  const handleEfectivoSave = async () => {
+    try {
+      await api.editarPeriodo(periodoActual.id, { efectivo_inicial: parseFloat(efectivoInput) || 0 });
+      setEditEfectivo(false);
+      const d = await api.getDashboard(usuario.id);
+      setData(d);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleLimpiarPeriodo = async () => {
+    if (!confirm('¿Limpiar este periodo? Se borrarán todos los movimientos y se reseteará el efectivo inicial a 0.')) return;
+    try {
+      await api.limpiarPeriodo(periodoActual.id);
+      setShowConfigModal(false);
+      const d = await api.getDashboard(usuario.id);
+      setData(d);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const openConfigModal = () => {
+    setEfectivoInput(parseFloat(periodoActual?.efectivo_inicial || 0).toFixed(2));
+    setEditEfectivo(false);
+    setShowConfigModal(true);
   };
 
   const periodoData = useMemo(() => {
@@ -184,13 +216,13 @@ export default function Dashboard() {
               ))}
             </select>
           )}
-          <Link
-            to="/mes/nuevo"
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-          >
-            Nuevo Mes
-          </Link>
-        </div>
+            <Link
+              to="/mes/nuevo"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+            >
+              Nuevo Mes
+            </Link>
+          </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -271,12 +303,12 @@ export default function Dashboard() {
                 Agregar Movimiento
               </button>
             )}
-            <Link
-              to={`/periodo/${periodoActual?.id}`}
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            <button
+              onClick={openConfigModal}
+              className="text-gray-500 hover:text-gray-700 text-sm font-medium"
             >
-              Ver detalle del periodo &rarr;
-            </Link>
+              Config
+            </button>
           </div>
         </div>
 
@@ -471,6 +503,86 @@ export default function Dashboard() {
               );
             })()}
           </>
+        )}
+
+        {showConfigModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+            onClick={() => setShowConfigModal(false)}
+          >
+            <div
+              className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-bold text-gray-800">Configuración del Periodo</h2>
+                <button
+                  onClick={() => setShowConfigModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+                >
+                  &times;
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-gray-500 text-sm font-medium mb-2">Periodo #{periodoActual?.id}</h3>
+                </div>
+
+                <div>
+                  <h3 className="text-gray-500 text-sm font-medium mb-2">Efectivo Inicial</h3>
+                  {editEfectivo ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={efectivoInput}
+                        onChange={(e) => setEfectivoInput(e.target.value)}
+                        className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+                        autoFocus
+                      />
+                      <button
+                        onClick={handleEfectivoSave}
+                        className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm whitespace-nowrap"
+                      >
+                        Guardar
+                      </button>
+                      <button
+                        onClick={() => setEditEfectivo(false)}
+                        className="text-gray-500 text-sm whitespace-nowrap"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-center">
+                      <p className="text-xl font-bold text-gray-800">
+                        RD$ {parseFloat(efectivoInput || 0).toFixed(2)}
+                      </p>
+                      <button
+                        onClick={() => setEditEfectivo(true)}
+                        className="text-blue-600 text-sm hover:underline"
+                      >
+                        Editar
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <hr className="border-gray-200" />
+
+                <div>
+                  <h3 className="text-gray-500 text-sm font-medium mb-2 text-red-600">Zona de Peligro</h3>
+                  <button
+                    onClick={handleLimpiarPeriodo}
+                    className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 text-sm"
+                  >
+                    Limpiar Periodo
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
