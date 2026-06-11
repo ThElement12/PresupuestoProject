@@ -8,7 +8,6 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import NuevoMes from './pages/NuevoMes';
 import MesDetail from './pages/MesDetail';
-import PeriodoDetail from './pages/PeriodoDetail';
 import Metodos from './pages/Metodos';
 import NuevoMetodo from './pages/NuevoMetodo';
 import AdminPanel from './pages/AdminPanel';
@@ -31,10 +30,6 @@ function App() {
           <Route
             path="/mes/:id"
             element={<ProtectedRoute><Layout><MesDetail /></Layout></ProtectedRoute>}
-          />
-          <Route
-            path="/periodo/:id"
-            element={<ProtectedRoute><Layout><PeriodoDetail /></Layout></ProtectedRoute>}
           />
           <Route
             path="/metodos"

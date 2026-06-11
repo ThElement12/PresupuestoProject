@@ -55,6 +55,7 @@ export const api = {
     body: JSON.stringify(data),
   }),
   borrarPeriodo: (id) => request(`/borrar_periodo/${id}`, { method: 'DELETE' }),
+  limpiarPeriodo: (id) => request(`/limpiar-periodo/${id}`, { method: 'DELETE' }),
 
   getMovimientos: (periodoId) => request(`/movimiento/${periodoId}`),
   crearMovimiento: (data) => request('/nuevo_movimiento', {
@@ -67,6 +68,17 @@ export const api = {
   }),
   borrarMovimiento: (id) => request(`/borrar_movimiento/${id}`, { method: 'DELETE' }),
   getTiposMovimiento: () => request('/tipo-movimiento'),
+
+  getTransaccionesEfectivo: (periodoId) => request(`/transaccion-efectivo/${periodoId}`),
+  crearTransaccionEfectivo: (data) => request('/nueva-transaccion-efectivo', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  editarTransaccionEfectivo: (id, data) => request(`/editar-transaccion-efectivo/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  borrarTransaccionEfectivo: (id) => request(`/borrar-transaccion-efectivo/${id}`, { method: 'DELETE' }),
 
   getMetodos: (usuarioId) => request(`/metodo/${usuarioId}`),
   crearMetodo: (data) => request('/nuevo_metodo', {

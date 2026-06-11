@@ -13,6 +13,19 @@ CREATE TABLE Usuario (
 ) ENGINE=InnoDB;
 
 -- =========================
+-- Tabla TransaccionEfectivo
+-- =========================
+CREATE TABLE TransaccionEfectivo (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  periodo_id INT NOT NULL,
+  tipo ENUM('deposito','retiro') NOT NULL,
+  monto DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  descripcion VARCHAR(255) DEFAULT NULL,
+  fecha DATE DEFAULT NULL,
+  CONSTRAINT fk_te_periodo FOREIGN KEY (periodo_id) REFERENCES Periodo(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- =========================
 -- Tabla Configuracion
 -- =========================
 CREATE TABLE Configuracion (

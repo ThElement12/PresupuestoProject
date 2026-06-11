@@ -46,6 +46,11 @@ router.get('/dashboard/:usuario_id', async (req, res) => {
         [periodo.id]
       );
 
+      const [transacciones] = await db.query(
+        'SELECT * FROM TransaccionEfectivo WHERE periodo_id = ? ORDER BY id ASC',
+        [periodo.id]
+      );
+
       let ingresos = 0;
       let gastos = 0;
       const movsEnriquecidos = [];
@@ -79,6 +84,7 @@ router.get('/dashboard/:usuario_id', async (req, res) => {
       periodosConMovimientos.push({
         ...periodo,
         movimientos: movsEnriquecidos,
+        transacciones,
         ingresos,
         gastos,
       });
@@ -99,8 +105,21 @@ router.get('/dashboard/:usuario_id', async (req, res) => {
       }
     }
 
-    const efectivoRestante = totalEfectivoInicial - cashGastos;
-    const tarjetaRestante = totalIngresos - noCashGastos;
+    let efectivoRestante = totalEfectivoInicial - cashGastos;
+    let tarjetaRestante = totalIngresos - noCashGastos;
+
+    for (const periodo of periodosConMovimientos) {
+      for (const t of periodo.transacciones) {
+        const monto = parseFloat(t.monto) || 0;
+        if (t.tipo === 'deposito') {
+          efectivoRestante -= monto;
+          tarjetaRestante += monto;
+        } else if (t.tipo === 'retiro') {
+          efectivoRestante += monto;
+          tarjetaRestante -= monto;
+        }
+      }
+    }
 
     res.json({
       mes,
