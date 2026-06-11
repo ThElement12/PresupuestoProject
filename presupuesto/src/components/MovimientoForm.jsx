@@ -8,7 +8,7 @@ const emptyForm = {
   monto_usd: '',
   monto_rd: '',
   isFijo: false,
-  fecha_pago: '',
+  diaCobro: '',
   pagado: false,
 };
 
@@ -21,7 +21,10 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
   }, []);
 
   useEffect(() => {
-    if (initial) setForm(initial);
+    if (initial) {
+      const day = initial.fecha_pago ? String(new Date(initial.fecha_pago + 'T00:00:00').getDate()) : '';
+      setForm({ ...initial, diaCobro: day });
+    }
   }, [initial]);
 
   const handleChange = (e) => {
@@ -31,6 +34,7 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
 
   const selectedMetodo = metodos.find((m) => m.id === parseInt(form.metodo_id));
   const esEfectivo = selectedMetodo?.es_efectivo === true;
+  const esGastoFijo = parseInt(form.tipoMovimiento_id) === 2 && form.isFijo && !esEfectivo;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -41,8 +45,14 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
       monto_rd: parseFloat(form.monto_rd) || 0,
       metodo_id: parseInt(form.tipoMovimiento_id) === 2 ? parseInt(form.metodo_id) : null,
       tipoMovimiento_id: parseInt(form.tipoMovimiento_id),
-      fecha_pago: form.fecha_pago || null,
       isFijo: esEfectivo ? false : form.isFijo,
+      fecha_pago: esGastoFijo && form.diaCobro
+        ? (() => {
+            const today = new Date();
+            const day = String(parseInt(form.diaCobro)).padStart(2, '0');
+            return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${day}`;
+          })()
+        : null,
       pagado: esEfectivo ? false : form.pagado,
     };
 
@@ -133,18 +143,21 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
           />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      {esGastoFijo && (
         <div>
-          <label className="block text-sm font-medium text-gray-700">Fecha de pago</label>
+          <label className="block text-sm font-medium text-gray-700">Día de cobro</label>
           <input
-            type="date"
-            name="fecha_pago"
-            value={form.fecha_pago}
+            type="number"
+            name="diaCobro"
+            value={form.diaCobro}
             onChange={handleChange}
+            min="1"
+            max="31"
             className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm"
+            required
           />
         </div>
-      </div>
+      )}
       {!esEfectivo && (
         <div className="flex items-center gap-4">
           <label className="flex items-center gap-2 text-sm">
@@ -156,15 +169,17 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
             />
             Movimiento fijo
           </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              name="pagado"
-              checked={form.pagado}
-              onChange={handleChange}
-            />
-            Pagado
-          </label>
+          {parseInt(form.tipoMovimiento_id) !== 1 && (
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="pagado"
+                checked={form.pagado}
+                onChange={handleChange}
+              />
+              Pagado
+            </label>
+          )}
         </div>
       )}
       <div className="flex gap-2">
