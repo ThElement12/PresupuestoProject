@@ -1,14 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 import ProgressBars from '../components/ProgressBars';
+import MovimientoForm from '../components/MovimientoForm';
 
 export default function Dashboard() {
   const { usuario } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedPeriodo, setSelectedPeriodo] = useState(null);
+  const [movements, setMovements] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editingMov, setEditingMov] = useState(null);
+  const [metodos, setMetodos] = useState([]);
 
   useEffect(() => {
     if (!usuario) return;
@@ -20,6 +25,120 @@ export default function Dashboard() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [usuario]);
+
+  useEffect(() => {
+    if (!usuario) return;
+    api.getMetodos(usuario.id).then(setMetodos).catch(console.error);
+  }, [usuario]);
+
+  const { mes, periodos } = data || {};
+  const periodoActual = periodos?.find((p) => p.id === selectedPeriodo) || periodos?.[0];
+
+  useEffect(() => {
+    setMovements(periodoActual?.movimientos || []);
+    setShowForm(false);
+    setEditingMov(null);
+  }, [periodoActual]);
+
+  const handleTogglePagado = async (movId, currentPagado) => {
+    setMovements((prev) =>
+      prev.map((m) => (m.id === movId ? { ...m, pagado: !currentPagado } : m))
+    );
+    try {
+      await api.editarMovimiento(movId, { pagado: !currentPagado });
+    } catch (err) {
+      setMovements((prev) =>
+        prev.map((m) => (m.id === movId ? { ...m, pagado: currentPagado } : m))
+      );
+      alert(err.message);
+    }
+  };
+
+  const handleFormSave = async () => {
+    setShowForm(false);
+    setEditingMov(null);
+    try {
+      const movs = await api.getMovimientos(periodoActual.id);
+      setMovements(movs);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleEdit = (mov) => {
+    setEditingMov(mov);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (movId) => {
+    if (!confirm('¿Borrar este movimiento?')) return;
+    try {
+      await api.borrarMovimiento(movId);
+      const movs = await api.getMovimientos(periodoActual.id);
+      setMovements(movs);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const periodoData = useMemo(() => {
+    const totalIngresos = movements
+      .filter((m) => m.tipo === 'Ingreso')
+      .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0);
+    const totalGastos = movements
+      .filter((m) => m.tipo === 'Gasto')
+      .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0);
+    const balance = totalIngresos - totalGastos;
+
+    const gastosNoPagados = movements.filter(
+      (m) => m.tipo === 'Gasto' && !m.pagado
+    );
+    const porMetodoMap = {};
+    for (const mov of gastosNoPagados) {
+      const key = mov.metodo_id;
+      if (!porMetodoMap[key]) {
+        porMetodoMap[key] = {
+          metodo_id: mov.metodo_id,
+          metodo_pago: mov.metodo_pago,
+          es_efectivo: mov.es_efectivo,
+          total: 0,
+        };
+      }
+      porMetodoMap[key].total += parseFloat(mov.totalRD) || 0;
+    }
+    const porMetodo = Object.values(porMetodoMap).map((m) => ({
+      ...m,
+      porcentaje: totalGastos > 0 ? (m.total / totalGastos) * 100 : 0,
+    }));
+
+    const cashGastos = movements
+      .filter((m) => m.tipo === 'Gasto' && m.es_efectivo)
+      .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0);
+    const noCashGastos = movements
+      .filter((m) => m.tipo === 'Gasto' && !m.es_efectivo)
+      .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0);
+    const efectivoRestante =
+      parseFloat(periodoActual?.efectivo_inicial || 0) - cashGastos;
+    const tarjetaRestante = totalIngresos - noCashGastos;
+
+    return {
+      totalIngresos,
+      totalGastos,
+      balance,
+      porMetodo,
+      efectivoRestante,
+      tarjetaRestante,
+    };
+  }, [movements, periodoActual]);
+
+  const {
+    totalIngresos,
+    totalGastos,
+    balance,
+    porMetodo,
+    efectivoRestante,
+    tarjetaRestante,
+  } = periodoData;
 
   if (loading) {
     return <div className="text-center text-gray-500">Cargando...</div>;
@@ -41,9 +160,6 @@ export default function Dashboard() {
       </div>
     );
   }
-
-  const { mes, periodos, resumen, porMetodo, efectivoRestante, tarjetaRestante } = data;
-  const periodoActual = periodos.find((p) => p.id === selectedPeriodo) || periodos[0];
 
   return (
     <div className="space-y-8">
@@ -81,19 +197,19 @@ export default function Dashboard() {
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-gray-500 text-sm font-medium">Ingresos</h3>
           <p className="text-2xl font-bold text-green-600">
-            RD$ {resumen.totalIngresos.toFixed(2)}
+            RD$ {totalIngresos.toFixed(2)}
           </p>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-gray-500 text-sm font-medium">Gastos</h3>
           <p className="text-2xl font-bold text-red-600">
-            RD$ {resumen.totalGastos.toFixed(2)}
+            RD$ {totalGastos.toFixed(2)}
           </p>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-gray-500 text-sm font-medium">Balance Total</h3>
-          <p className={`text-2xl font-bold ${resumen.balanceTotal >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-            RD$ {resumen.balanceTotal.toFixed(2)}
+          <p className={`text-2xl font-bold ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+            RD$ {balance.toFixed(2)}
           </p>
         </div>
         <div className="bg-white rounded-lg shadow p-6 border-2 border-green-200">
@@ -144,37 +260,218 @@ export default function Dashboard() {
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-lg font-bold text-gray-800">Periodos</h2>
-        {periodos.map((periodo, idx) => {
-          const isActive = periodo.id === periodoActual?.id;
-          return (
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-bold text-gray-800">Movimientos</h2>
+          <div className="flex items-center gap-3">
+            {!showForm && (
+              <button
+                onClick={() => { setEditingMov(null); setShowForm(true); }}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm"
+              >
+                Agregar Movimiento
+              </button>
+            )}
             <Link
-              key={periodo.id}
-              to={`/periodo/${periodo.id}`}
-              className={`block bg-white rounded-lg shadow p-4 hover:shadow-md transition ${isActive ? 'ring-2 ring-blue-400' : ''}`}
+              to={`/periodo/${periodoActual?.id}`}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
             >
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="font-semibold text-gray-800">
-                    Periodo {idx + 1}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    {new Date(periodo.fecha_inicio).toLocaleDateString()} -{' '}
-                    {new Date(periodo.fecha_fin).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-green-600 font-medium">
-                    +RD$ {periodo.ingresos.toFixed(2)}
-                  </p>
-                  <p className="text-red-600 font-medium">
-                    -RD$ {periodo.gastos.toFixed(2)}
-                  </p>
-                </div>
-              </div>
+              Ver detalle del periodo &rarr;
             </Link>
-          );
-        })}
+          </div>
+        </div>
+
+        {showForm && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+            onClick={() => { setShowForm(false); setEditingMov(null); }}
+          >
+            <div
+              className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MovimientoForm
+                periodoId={periodoActual?.id}
+                metodos={metodos}
+                initial={editingMov || undefined}
+                onSave={handleFormSave}
+                onCancel={() => { setShowForm(false); setEditingMov(null); }}
+              />
+            </div>
+          </div>
+        )}
+
+        {!showForm && movements.length === 0 ? (
+          <p className="text-gray-500 text-sm">No hay movimientos en este periodo.</p>
+        ) : null}
+
+        {!showForm && movements.length > 0 && (
+          <>
+            {(() => {
+              const ingresos = movements.filter((m) => m.tipo === 'Ingreso');
+              const gastosFijos = movements.filter((m) => m.tipo === 'Gasto' && m.isFijo);
+              const gastosDinamicos = movements.filter((m) => m.tipo === 'Gasto' && !m.isFijo);
+              return (
+                <>
+                  {ingresos.length > 0 && (
+                    <div>
+                      <h3 className="text-md font-bold text-green-700 mb-2">
+                        Ingresos
+                        <span className="text-sm font-normal text-gray-500 ml-2">
+                          (RD$ {ingresos.reduce((s, m) => s + parseFloat(m.totalRD || 0), 0).toFixed(2)})
+                        </span>
+                      </h3>
+                      <div className="space-y-2">
+                        {ingresos.map((mov) => (
+                          <div
+                            key={mov.id}
+                            className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-3"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <span className="inline-block w-2 h-2 rounded-full shrink-0 bg-green-500" />
+                              <span className="font-medium text-gray-800 truncate">{mov.descripcion}</span>
+                              <span className="text-sm text-gray-500 shrink-0">
+                                {mov.metodo_pago}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3 shrink-0 ml-3">
+                              <span className="font-medium text-green-600">
+                                RD$ {parseFloat(mov.totalRD).toFixed(2)}
+                              </span>
+                              <button
+                                onClick={() => handleEdit(mov)}
+                                className="text-blue-600 hover:text-blue-800 text-sm"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                onClick={() => handleDelete(mov.id)}
+                                className="text-red-600 hover:text-red-800 text-sm"
+                              >
+                                Borrar
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {gastosFijos.length > 0 && (
+                    <div>
+                      <h3 className="text-md font-bold text-red-700 mb-2">Gastos Fijos</h3>
+                      <div className="space-y-2">
+                        {gastosFijos.map((mov) => (
+                          <div
+                            key={mov.id}
+                            className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-3"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <input
+                                type="checkbox"
+                                checked={!!mov.pagado}
+                                onChange={() => handleTogglePagado(mov.id, mov.pagado)}
+                                className="h-4 w-4 shrink-0"
+                              />
+                              <span className="inline-block w-2 h-2 rounded-full shrink-0 bg-red-500" />
+                              <span className="font-medium text-gray-800 truncate">{mov.descripcion}</span>
+                              <span className="text-sm text-gray-500 shrink-0">
+                                {mov.metodo_pago}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3 shrink-0 ml-3">
+                              <span className="font-medium text-red-600">
+                                RD$ {parseFloat(mov.totalRD).toFixed(2)}
+                              </span>
+                              <span
+                                className={`text-xs px-2 py-0.5 rounded ${
+                                  mov.pagado
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-yellow-100 text-yellow-700'
+                                }`}
+                              >
+                                {mov.pagado ? 'Pagado' : 'Pendiente'}
+                              </span>
+                              <button
+                                onClick={() => handleEdit(mov)}
+                                className="text-blue-600 hover:text-blue-800 text-sm"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                onClick={() => handleDelete(mov.id)}
+                                className="text-red-600 hover:text-red-800 text-sm"
+                              >
+                                Borrar
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {gastosDinamicos.length > 0 && (
+                    <div>
+                      <h3 className="text-md font-bold text-orange-700 mb-2">Gastos Dinámicos</h3>
+                      <div className="space-y-2">
+                        {gastosDinamicos.map((mov) => (
+                          <div
+                            key={mov.id}
+                            className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-3"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <input
+                                type="checkbox"
+                                checked={!!mov.pagado}
+                                onChange={() => handleTogglePagado(mov.id, mov.pagado)}
+                                className="h-4 w-4 shrink-0"
+                              />
+                              <span className="inline-block w-2 h-2 rounded-full shrink-0 bg-red-500" />
+                              <span className="font-medium text-gray-800 truncate">{mov.descripcion}</span>
+                              <span className="text-sm text-gray-500 shrink-0">
+                                {mov.metodo_pago}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3 shrink-0 ml-3">
+                              <span className="font-medium text-red-600">
+                                RD$ {parseFloat(mov.totalRD).toFixed(2)}
+                              </span>
+                              <span
+                                className={`text-xs px-2 py-0.5 rounded ${
+                                  mov.pagado
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-yellow-100 text-yellow-700'
+                                }`}
+                              >
+                                {mov.pagado ? 'Pagado' : 'Pendiente'}
+                              </span>
+                              <button
+                                onClick={() => handleEdit(mov)}
+                                className="text-blue-600 hover:text-blue-800 text-sm"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                onClick={() => handleDelete(mov.id)}
+                                className="text-red-600 hover:text-red-800 text-sm"
+                              >
+                                Borrar
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {ingresos.length === 0 && gastosFijos.length === 0 && gastosDinamicos.length === 0 && (
+                    <p className="text-gray-500 text-sm">No hay movimientos en este periodo.</p>
+                  )}
+                </>
+              );
+            })()}
+          </>
+        )}
       </div>
     </div>
   );
