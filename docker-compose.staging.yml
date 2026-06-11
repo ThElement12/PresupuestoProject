@@ -1,0 +1,18 @@
+services:
+  mysql:
+    volumes:
+      - mysql_staging_data:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-presupuesto_staging}
+
+  backend:
+    environment:
+      DB_NAME: ${DB_NAME:-presupuesto_staging}
+
+  frontend:
+    build:
+      args:
+        VITE_API_URL: ""
+
+volumes:
+  mysql_staging_data:

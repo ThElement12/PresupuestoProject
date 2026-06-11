@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 async function request(endpoint, options = {}) {
   const token = localStorage.getItem('usuario');
@@ -8,7 +8,7 @@ async function request(endpoint, options = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
+  const res = await fetch(`${API_URL}/api${endpoint}`, { ...options, headers });
   if (!res.ok) {
     const error = await res.json().catch(() => ({ msg: 'Error del servidor' }));
     throw new Error(error.msg || `HTTP ${res.status}`);

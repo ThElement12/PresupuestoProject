@@ -26,7 +26,7 @@ const loadRoutes = async () => {
       const routeURL = pathToFileURL(routePath).href;
       const route = await import(routeURL);
 
-      app.use(route.default); 
+      app.use('/api', route.default);
     }
   } catch (err) {
     console.error("Error al cargar las rutas:", err);

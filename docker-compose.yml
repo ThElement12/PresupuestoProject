@@ -1,0 +1,45 @@
+services:
+  mysql:
+    image: mysql:8
+    container_name: presupuesto-mysql
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./server/db.sql:/docker-entrypoint-initdb.d/db.sql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+    networks:
+      - presupuesto-net
+
+  backend:
+    build: ./server
+    container_name: presupuesto-backend
+    environment:
+      PORT: 5000
+      DB_HOST: mysql
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+    depends_on:
+      - mysql
+    networks:
+      - presupuesto-net
+
+  frontend:
+    build:
+      context: ./presupuesto
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+    container_name: presupuesto-frontend
+    ports:
+      - "6969:80"
+    depends_on:
+      - backend
+    networks:
+      - presupuesto-net
+
+volumes:
+  mysql_data:
+
+networks:
+  presupuesto-net:

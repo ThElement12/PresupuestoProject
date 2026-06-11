@@ -9,26 +9,95 @@ Two independent Node.js packages (no workspace manager):
 | `presupuesto/` | Frontend (SPA) | React 18, Vite 6, react-router-dom 7, Tailwind CSS 3, ES Lint 9 flat config |
 | `server/` | Backend (REST API) | Express 4, MySQL2 (pool), ESM, bcryptjs, nodemon |
 
-No CI/CD, no Docker, no TypeScript, no test framework.
+No CI/CD, no TypeScript, no test framework.
 
-## Commands
+## Docker
+
+3 entornos con Docker Compose (multi-file pattern). Requiere Docker y Docker Compose instalados.
+
+### Archivos
+
+| Archivo | Ambiente |
+|---------|----------|
+| `docker-compose.yml` | Producción (base) |
+| `docker-compose.override.yml` | Dev (se auto-carga en `docker compose up`) |
+| `docker-compose.staging.yml` | Staging |
+
+### Variables de entorno
+
+Copiar `.env.example` a `.env` en la raíz del proyecto y ajustar valores:
+
+```
+MYSQL_ROOT_PASSWORD=...
+DB_USER=root
+DB_PASS=...
+DB_NAME=presupuesto_mensual
+VITE_API_URL=http://localhost:5000
+```
+
+### Uso
+
+```bash
+# === DEV (main branch) ===
+docker compose up
+# Frontend: http://localhost:5176 (Vite HMR)
+# Backend:  http://localhost:5000/api/...
+# MySQL:    localhost:3307
+
+# === STAGING ===
+docker compose -f docker-compose.yml -f docker-compose.staging.yml up -d
+# Frontend: http://<host>:6969 (Nginx, built)
+# Backend:  interno (solo vía frontend)
+
+# === PRODUCCIÓN ===
+docker compose -f docker-compose.yml up -d
+# Frontend: https://budget.joseph-cloud.com (Nginx, built)
+# Backend:  interno
+```
+
+### Rebuildear imágenes
+
+```bash
+docker compose build     # rebuildear todo
+docker compose up -d     # levantar con imágenes nuevas
+docker compose down      # detener todo (no borra volúmenes)
+docker compose down -v   # detener y borrar volúmenes (¡cuidado! borra datos MySQL)
+```
+
+### Servicios
+
+| Servicio | Puerto host | Puerto interno | Imagen |
+|----------|-------------|----------------|--------|
+| `mysql` | 3307 (solo dev) | 3306 | mysql:8 |
+| `backend` | — | 5000 | build ./server |
+| `frontend` | 6969 | 80 | build ./presupuesto |
+
+### Notas Docker
+
+- **MySQL**: El volumen `mysql_data` persiste la base. En staging usa `mysql_staging_data`. El archivo `server/db.sql` se ejecuta automáticamente al primer inicio.
+- **Nginx**: Sirve el frontend build y proxy reversa `/api/*` → `backend:5000/api/*`. Sin CORS porque todo corre en el mismo origen.
+- **Dev frontend**: Usa Vite dev server con HMR en puerto 5176. Los archivos `src/`, `index.html`, `vite.config.js`, etc. se montan como volúmenes.
+- **Dev backend**: Usa nodemon con el directorio `src/` montado como volumen.
+- **Dominio producción**: `budget.joseph-cloud.com` — Cloudflare Tunnel apunta a `localhost:6969`.
+
+## Commands (sin Docker)
 
 ```
 # Frontend (presupuesto/)
-npm run dev          # Vite dev server → localhost:5173
+npm run dev          # Vite dev server → localhost:5176 (5173 anterior)
 npm run build        # Production build → dist/
 npm run lint         # ESLint 9 flat config
 npm run preview      # Preview production build
 
 # Backend (server/)
-npm run dev          # nodemon, hot-restart on src/ changes (port :5000)
+npm run serve        # nodemon, hot-restart on src/ changes (port :5000)
 npm start            # node src/index.js
 ```
 
 ## Backend quirks
 
 **Auto-route loading** (`server/src/index.js:13-25`):
-Reads all `.js` files in `src/routes/` dynamically and mounts each `export default router` at `/`. Route paths must be globally unique.
+Reads all `.js` files in `src/routes/` dynamically and mounts each `export default router` at `/api/`. Route paths must be globally unique (prefixed with `/api`).
 
 **Database** (`server/db.sql`):
 - MySQL, database name `presupuesto_mensual`
@@ -54,7 +123,7 @@ Reads all `.js` files in `src/routes/` dynamically and mounts each `export defau
 
 **Auth** (`presupuesto/src/context/AuthContext.jsx`): Stores full user JSON (including `rol`) as `localStorage.usuario`. No real token — the login response object is saved as-is and sent as Bearer token.
 
-**API client** (`presupuesto/src/api/client.js`): Hardcodes `API_URL = 'http://localhost:5000'`. No env variable for the backend URL.
+**API client** (`presupuesto/src/api/client.js`): Usa `import.meta.env.VITE_API_URL` (fallback `http://localhost:5000`). Aplica prefijo `/api` automáticamente a los endpoints.
 
 **Admin panel** (`presupuesto/src/pages/AdminPanel.jsx`): Displays and updates `tasa_dolar` via `GET/PUT /config`.
 
