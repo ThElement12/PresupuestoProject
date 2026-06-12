@@ -6,13 +6,20 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+
+# ---- lint (CI only): docker build --target lint ./presupuesto ----
+FROM build AS lint
+RUN npm run lint
+
+# ---- bundle ----
+FROM build AS bundle
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
 # ---- runtime (non-root nginx, port 8080) ----
 FROM nginxinc/nginx-unprivileged:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=bundle /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 8080

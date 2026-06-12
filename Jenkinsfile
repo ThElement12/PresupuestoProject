@@ -12,7 +12,6 @@ pipeline {
         FRONTEND_IMAGE = "${DOCKER_USER}/presupuesto-frontend"
         BACKEND_IMAGE = "${DOCKER_USER}/presupuesto-backend"
         IP_UNRAID = '192.168.100.3'
-        DOCKER_BUILDKIT = '1'
     }
 
     stages {
@@ -78,8 +77,7 @@ pipeline {
                 stage('Lint Frontend') {
                     steps {
                         sh '''
-                            docker run --rm -v "$(pwd)/presupuesto:/app" -w /app node:20-alpine \
-                                sh -c "npm ci && npm run lint"
+                            docker build --target lint ./presupuesto
                         '''
                     }
                 }
