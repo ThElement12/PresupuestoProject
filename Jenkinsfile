@@ -32,8 +32,8 @@ pipeline {
                     def dbName = "presupuesto_mensual${dbSuffix}"
 
                     echo "[DB] Inicializando ${dbName}"
-                    sh "docker exec taller-mariadb mariadb -u root -pSantiagoklk12 -e 'CREATE DATABASE IF NOT EXISTS ${dbName}'"
-                    sh "docker exec -i taller-mariadb mariadb -u root -pSantiagoklk12 ${dbName} < server/db.sql"
+                    sh "docker exec taller-mariadb mariadb -u admin -p adminpassword -e 'CREATE DATABASE IF NOT EXISTS ${dbName}'"
+                    sh "docker exec -i taller-mariadb mariadb -u admin -p adminpassword ${dbName} < server/db.sql"
                 }
             }
         }
@@ -152,7 +152,7 @@ pipeline {
                             -e DB_HOST=${IP_UNRAID} \
                             -e DB_PORT=3307 \
                             -e DB_USER=admin \
-                            -e DB_PASS=Santiagoklk12 \
+                            -e DB_PASS=adminpassword \
                             -e DB_NAME=presupuesto_mensual${dbSuffix} \
                             -e PORT=5000 \
                             ${BACKEND_IMAGE}:${branchTag}
