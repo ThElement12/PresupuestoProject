@@ -190,9 +190,9 @@ pipeline {
             steps {
                 sh '''
                     sleep 10
-                    curl -sf http://localhost:$BACKEND_PORT/ > /dev/null || (echo "[SMOKE] Backend no responde" && exit 1)
-                    curl -sf http://localhost:$FRONTEND_PORT/ > /dev/null || (echo "[SMOKE] Frontend no responde" && exit 1)
-                    curl -sf http://localhost:$FRONTEND_PORT/api/config > /dev/null || (echo "[SMOKE] Proxy frontend->backend no responde" && exit 1)
+                    curl -sf http://$IP_UNRAID:$BACKEND_PORT/ > /dev/null || (echo "[SMOKE] Backend no responde" && exit 1)
+                    curl -sf http://$IP_UNRAID:$FRONTEND_PORT/ > /dev/null || (echo "[SMOKE] Frontend no responde" && exit 1)
+                    curl -sf http://$IP_UNRAID:$FRONTEND_PORT/api/config > /dev/null || (echo "[SMOKE] Proxy frontend->backend no responde" && exit 1)
                     echo "[SMOKE] OK"
                 '''
             }
