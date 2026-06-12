@@ -1,0 +1,33 @@
+services:
+  mysql:
+    ports:
+      - "3307:3306"
+
+  backend:
+    command: npx nodemon src/index.js
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./server/src:/app/src
+
+  frontend:
+    build: null
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host"
+    ports:
+      - "5176:5176"
+    volumes:
+      - ./presupuesto/package.json:/app/package.json
+      - ./presupuesto/package-lock.json:/app/package-lock.json
+      - ./presupuesto/index.html:/app/index.html
+      - ./presupuesto/vite.config.js:/app/vite.config.js
+      - ./presupuesto/tailwind.config.js:/app/tailwind.config.js
+      - ./presupuesto/postcss.config.js:/app/postcss.config.js
+      - ./presupuesto/eslint.config.js:/app/eslint.config.js
+      - ./presupuesto/src:/app/src
+      - ./presupuesto/public:/app/public
+    environment:
+      VITE_API_URL: http://localhost:5000
+    networks:
+      - presupuesto-net

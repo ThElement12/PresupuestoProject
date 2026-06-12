@@ -1,0 +1,8 @@
+services:
+  backend:
+    image: thelement012/presupuesto-backend:latest
+    build: null
+
+  frontend:
+    image: thelement012/presupuesto-frontend:latest
+    build: null
