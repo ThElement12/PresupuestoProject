@@ -32,8 +32,8 @@ pipeline {
                     def dbName = "presupuesto_mensual${dbSuffix}"
 
                     echo "[DB] Inicializando ${dbName}"
-                    sh "docker exec taller-mariadb mariadb -u admin -p adminpassword -e 'CREATE DATABASE IF NOT EXISTS ${dbName}'"
-                    sh "docker exec -i taller-mariadb mariadb -u admin -p adminpassword ${dbName} < server/db.sql"
+                    sh "docker exec taller-mariadb mariadb -u admin -padminpassword -e 'CREATE DATABASE IF NOT EXISTS ${dbName}'"
+                    sh "docker exec -i taller-mariadb mariadb -u admin -padminpassword ${dbName} < server/db.sql"
                 }
             }
         }
