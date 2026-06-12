@@ -36,7 +36,7 @@ const loadRoutes = async () => {
 loadRoutes();
 
 app.get("/", (req, res) => {
-  res.send("Servidor funcionando");
+  res.send(`Servidor funcionando. Conectado a la base de datos ${process.env.DB_NAME} en la URL ${process.env.DB_HOST}:${process.env.DB_PORT || 3306}`);
 });
 
 app.listen(PORT, () => {
