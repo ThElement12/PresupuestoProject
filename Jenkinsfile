@@ -13,6 +13,30 @@ pipeline {
     }
 
     stages {
+        stage('Init Database') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'staging'
+                    branch 'production'
+                }
+            }
+            steps {
+                script {
+                    def dbSuffix = ''
+                    if (env.BRANCH_NAME == 'main') {
+                        dbSuffix = '_dev'
+                    } else if (env.BRANCH_NAME == 'staging') {
+                        dbSuffix = '_staging'
+                    }
+                    def dbName = "presupuesto_mensual${dbSuffix}"
+
+                    echo "[DB] Inicializando ${dbName}"
+                    sh "docker exec presupuesto-mysql mysql -u root -pSantiagoklk12! -e 'CREATE DATABASE IF NOT EXISTS ${dbName}'"
+                    sh "docker exec -i presupuesto-mysql mysql -u root -pSantiagoklk12! ${dbName} < server/db.sql"
+                }
+            }
+        }
         stage('Build & Tag') {
             when {
                 anyOf {

@@ -4,7 +4,7 @@ USE presupuesto_mensual;
 -- =========================
 -- Tabla Usuario
 -- =========================
-CREATE TABLE Usuario (
+CREATE TABLE IF NOT EXISTS Usuario (
   id INT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(255) NOT NULL,
   correo VARCHAR(255) NOT NULL UNIQUE,
@@ -15,28 +15,28 @@ CREATE TABLE Usuario (
 -- =========================
 -- Tabla Configuracion
 -- =========================
-CREATE TABLE Configuracion (
+CREATE TABLE IF NOT EXISTS Configuracion (
   id INT AUTO_INCREMENT PRIMARY KEY,
   clave VARCHAR(100) NOT NULL UNIQUE,
   valor VARCHAR(255) NOT NULL
 ) ENGINE=InnoDB;
 
-INSERT INTO Configuracion (clave, valor) VALUES ('tasa_dolar', '0.0000');
+INSERT IGNORE INTO Configuracion (clave, valor) VALUES ('tasa_dolar', '0.0000');
 
 -- =========================
 -- Tabla TipoMovimiento
 -- =========================
-CREATE TABLE TipoMovimiento (
+CREATE TABLE IF NOT EXISTS TipoMovimiento (
   id INT AUTO_INCREMENT PRIMARY KEY,
   movimiento VARCHAR(100) NOT NULL UNIQUE
 ) ENGINE=InnoDB;
 
-INSERT INTO TipoMovimiento (movimiento) VALUES ('Ingreso'), ('Gasto');
+INSERT IGNORE INTO TipoMovimiento (movimiento) VALUES ('Ingreso'), ('Gasto');
 
 -- =========================
 -- Tabla Metodo
 -- =========================
-CREATE TABLE Metodo (
+CREATE TABLE IF NOT EXISTS Metodo (
   id INT AUTO_INCREMENT PRIMARY KEY,
   usuario_id INT NOT NULL,
   metodo_pago VARCHAR(100) NOT NULL,
@@ -47,7 +47,7 @@ CREATE TABLE Metodo (
 -- =========================
 -- Tabla Mes
 -- =========================
-CREATE TABLE Mes (
+CREATE TABLE IF NOT EXISTS Mes (
   id INT AUTO_INCREMENT PRIMARY KEY,
   usuario_id INT NOT NULL,
   porcentajeGastos DECIMAL(5,2) NOT NULL,
@@ -60,7 +60,7 @@ CREATE TABLE Mes (
 -- =========================
 -- Tabla Periodo
 -- =========================
-CREATE TABLE Periodo (
+CREATE TABLE IF NOT EXISTS Periodo (
   id INT AUTO_INCREMENT PRIMARY KEY,
   mes_id INT NOT NULL,
   fecha_inicio DATE NOT NULL,
@@ -72,7 +72,7 @@ CREATE TABLE Periodo (
 -- =========================
 -- Tabla TransaccionEfectivo
 -- =========================
-CREATE TABLE TransaccionEfectivo (
+CREATE TABLE IF NOT EXISTS TransaccionEfectivo (
   id INT AUTO_INCREMENT PRIMARY KEY,
   periodo_id INT NOT NULL,
   tipo ENUM('deposito','retiro') NOT NULL,
@@ -85,7 +85,7 @@ CREATE TABLE TransaccionEfectivo (
 -- =========================
 -- Tabla Movimiento
 -- =========================
-CREATE TABLE Movimiento (
+CREATE TABLE IF NOT EXISTS Movimiento (
   id INT AUTO_INCREMENT PRIMARY KEY,
   tipoMovimiento_id INT NOT NULL,
   periodo_id INT NOT NULL,
