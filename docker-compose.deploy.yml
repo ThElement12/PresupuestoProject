@@ -1,8 +1,15 @@
+# Pulls and runs prebuilt images from Docker Hub for LOCAL smoke-testing of published images.
+# NOT used by the Jenkins "Deploy" stage (that deploys via `docker run` on the unRAID host).
+#
+# Usage:
+#   IMAGE_TAG=staging docker compose -f docker-compose.yml -f docker-compose.deploy.yml pull
+#   IMAGE_TAG=staging docker compose -f docker-compose.yml -f docker-compose.deploy.yml up -d
+# IMAGE_TAG: production | staging | main | <build-number> | latest (default)
 services:
   backend:
-    image: thelement012/presupuesto-backend:latest
+    image: thelement012/presupuesto-backend:${IMAGE_TAG:-latest}
     build: null
 
   frontend:
-    image: thelement012/presupuesto-frontend:latest
+    image: thelement012/presupuesto-frontend:${IMAGE_TAG:-latest}
     build: null

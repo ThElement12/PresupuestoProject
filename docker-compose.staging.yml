@@ -13,6 +13,8 @@ services:
     build:
       args:
         VITE_API_URL: ""
+    ports:
+      - "6971:8080"
 
 volumes:
   mysql_staging_data:
