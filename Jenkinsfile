@@ -32,8 +32,8 @@ pipeline {
                     def dbName = "presupuesto_mensual${dbSuffix}"
 
                     echo "[DB] Inicializando ${dbName}"
-                    sh "docker exec presupuesto-mysql mysql -u root -pSantiagoklk12! -e 'CREATE DATABASE IF NOT EXISTS ${dbName}'"
-                    sh "docker exec -i presupuesto-mysql mysql -u root -pSantiagoklk12! ${dbName} < server/db.sql"
+                    sh "docker exec taller-mariadb mysql -u root -pSantiagoklk12! -e 'CREATE DATABASE IF NOT EXISTS ${dbName}'"
+                    sh "docker exec -i taller-mariadb mysql -u root -pSantiagoklk12! ${dbName} < server/db.sql"
                 }
             }
         }
@@ -150,7 +150,7 @@ pipeline {
                         docker run -d --name presupuesto-backend-${branchTag} \
                             -p ${backendPort}:5000 \
                             -e DB_HOST=${IP_UNRAID} \
-                            -e DB_PORT=3306 \
+                            -e DB_PORT=3307 \
                             -e DB_USER=root \
                             -e DB_PASS=Santiagoklk12! \
                             -e DB_NAME=presupuesto_mensual${dbSuffix} \
