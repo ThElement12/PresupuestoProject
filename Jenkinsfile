@@ -26,9 +26,20 @@ pipeline {
                     def branchTag = env.BRANCH_NAME.replace('/', '-')
                     def numericTag = "${env.BUILD_NUMBER}"
 
+                    def backendPort = '5000'
+                    if (env.BRANCH_NAME == 'main') {
+                        backendPort = '5001'
+                    } else if (env.BRANCH_NAME == 'staging') {
+                        backendPort = '5002'
+                    }
+
                     def viteApiUrl = ""
-                    if (env.BRANCH_NAME != 'production') {
-                        viteApiUrl = "http://${IP_UNRAID}:5000"
+                    if (env.BRANCH_NAME == 'production') {
+                        viteApiUrl = ""
+                    } else if (env.BRANCH_NAME == 'staging') {
+                        viteApiUrl = "http://${IP_UNRAID}:${backendPort}"
+                    } else {
+                        viteApiUrl = "http://${IP_UNRAID}:${backendPort}"
                     }
 
                     echo "[BUILD] Backend - tag: ${branchTag}"
