@@ -1,3 +1,5 @@
+import { ApiError } from './ApiError.js';
+
 const API_URL = import.meta.env.VITE_API_URL !== undefined ? import.meta.env.VITE_API_URL : 'http://localhost:5000';
 
 async function request(endpoint, options = {}) {
@@ -10,8 +12,12 @@ async function request(endpoint, options = {}) {
 
   const res = await fetch(`${API_URL}/api${endpoint}`, { ...options, headers });
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ msg: 'Error del servidor' }));
-    throw new Error(error.msg || `HTTP ${res.status}`);
+    const body = await res.json().catch(() => null);
+    throw new ApiError(
+      body?.message || 'Error del servidor',
+      body?.errorCode || 'SERVER_ERROR',
+      res.status
+    );
   }
   return res.json();
 }

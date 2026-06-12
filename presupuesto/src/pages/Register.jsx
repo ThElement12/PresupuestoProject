@@ -19,7 +19,11 @@ export default function Register() {
       setSuccess('Usuario registrado exitosamente');
       setTimeout(() => navigate('/login'), 1500);
     } catch (err) {
-      setError(err.message);
+      if (err.errorCode === 'USER_EXISTS' || err.errorCode === 'REGISTRATION_ERROR') {
+        setError(err.message);
+      } else {
+        setError('Error del servidor');
+      }
     }
   };
 

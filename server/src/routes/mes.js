@@ -1,5 +1,7 @@
 import express from "express";
 import db from "../database.js";
+import AppError from "../utils/AppError.js";
+import asyncHandler from "../utils/asyncHandler.js";
 
 const router = express.Router();
 
@@ -68,76 +70,56 @@ async function propagateFixedMovements(newMesId, periodoIndex, usuarioId, newPer
   }
 }
 
-router.get('/mes-usuario/:IdUsuario', async (req, res) => {
+router.get('/mes-usuario/:IdUsuario', asyncHandler(async (req, res) => {
   const { IdUsuario } = req.params;
-  try {
-    const [rows] = await db.query('SELECT * FROM Mes WHERE usuario_id = ?', [IdUsuario]);
-    res.json(rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ msg: 'Error al obtener meses' });
-  }
-});
+  const [rows] = await db.query('SELECT * FROM Mes WHERE usuario_id = ?', [IdUsuario]);
+  res.json(rows);
+}));
 
-router.get('/mes/:id', async (req, res) => {
+router.get('/mes/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
-  try {
-    const [rows] = await db.query('SELECT * FROM Mes WHERE id = ?', [id]);
-    res.json(rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ msg: 'Error al obtener mes' });
-  }
-});
+  const [rows] = await db.query('SELECT * FROM Mes WHERE id = ?', [id]);
+  res.json(rows);
+}));
 
-router.post('/nuevo-mes', async (req, res) => {
+router.post('/nuevo-mes', asyncHandler(async (req, res) => {
   const { usuario_id, porcentaje_gastos, porcentaje_gustos, porcentaje_ahorros, periodicidad, fecha_inicio_mes, fecha_fin_mes, efectivo_inicial = 0 } = req.body;
 
   const total = parseFloat(porcentaje_gastos) + parseFloat(porcentaje_gustos) + parseFloat(porcentaje_ahorros);
   if (total !== 100) {
-    return res.status(400).json({ msg: 'Los porcentajes deben ser igual a 100' });
+    throw new AppError(400, 'Los porcentajes deben ser igual a 100', 'VALIDATION_ERROR');
   }
 
-  try {
-    const [mesResult] = await db.query(
-      'INSERT INTO Mes (usuario_id, porcentajeGastos, porcentajeGustos, porcentajeAhorros, periodicidad) VALUES (?, ?, ?, ?, ?)',
-      [usuario_id, porcentaje_gastos, porcentaje_gustos, porcentaje_ahorros, periodicidad || 'mensual']
+  const [mesResult] = await db.query(
+    'INSERT INTO Mes (usuario_id, porcentajeGastos, porcentajeGustos, porcentajeAhorros, periodicidad) VALUES (?, ?, ?, ?, ?)',
+    [usuario_id, porcentaje_gastos, porcentaje_gustos, porcentaje_ahorros, periodicidad || 'mensual']
+  );
+
+  const mesId = mesResult.insertId;
+  const periods = generatePeriods(periodicidad || 'mensual', mesId, fecha_inicio_mes, fecha_fin_mes);
+
+  const createdPeriods = [];
+  for (let i = 0; i < periods.length; i++) {
+    const p = periods[i];
+    const efectivo = i === 0 ? parseFloat(efectivo_inicial) || 0 : 0;
+    const [periodResult] = await db.query(
+      'INSERT INTO Periodo (mes_id, fecha_inicio, fecha_fin, efectivo_inicial) VALUES (?, ?, ?, ?)',
+      [p.mes_id, p.fecha_inicio, p.fecha_fin, efectivo]
     );
 
-    const mesId = mesResult.insertId;
-    const periods = generatePeriods(periodicidad || 'mensual', mesId, fecha_inicio_mes, fecha_fin_mes);
+    const periodoId = periodResult.insertId;
+    await propagateFixedMovements(mesId, i, usuario_id, periodoId);
 
-    const createdPeriods = [];
-    for (let i = 0; i < periods.length; i++) {
-      const p = periods[i];
-      const efectivo = i === 0 ? parseFloat(efectivo_inicial) || 0 : 0;
-      const [periodResult] = await db.query(
-        'INSERT INTO Periodo (mes_id, fecha_inicio, fecha_fin, efectivo_inicial) VALUES (?, ?, ?, ?)',
-        [p.mes_id, p.fecha_inicio, p.fecha_fin, efectivo]
-      );
-
-      const periodoId = periodResult.insertId;
-      await propagateFixedMovements(mesId, i, usuario_id, periodoId);
-
-      createdPeriods.push({ id: periodoId, ...p });
-    }
-
-    res.status(201).json({ msg: "Mes registrado satisfactoriamente", mes_id: mesId, periodos: createdPeriods });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ msg: 'Error al registrar el mes' });
+    createdPeriods.push({ id: periodoId, ...p });
   }
-});
 
-router.delete('/borrar_mes/:id', async (req, res) => {
+  res.status(201).json({ msg: "Mes registrado satisfactoriamente", mes_id: mesId, periodos: createdPeriods });
+}));
+
+router.delete('/borrar_mes/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
-  try {
-    await db.query('DELETE FROM Mes WHERE id = ?', [id]);
-    res.status(200).json({ msg: "Mes borrado satisfactoriamente" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ msg: 'Error al borrar el mes' });
-  }
-});
+  await db.query('DELETE FROM Mes WHERE id = ?', [id]);
+  res.status(200).json({ msg: "Mes borrado satisfactoriamente" });
+}));
 
 export default router;
