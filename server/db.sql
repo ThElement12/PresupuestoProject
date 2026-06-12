@@ -1,6 +1,3 @@
-CREATE DATABASE IF NOT EXISTS presupuesto_mensual;
-USE presupuesto_mensual;
-
 -- =========================
 -- Tabla Usuario
 -- =========================

@@ -33,7 +33,7 @@ pipeline {
 
                     echo "[DB] Inicializando ${dbName}"
                     sh "docker exec taller-mariadb mariadb -u admin -padminpassword -e 'CREATE DATABASE IF NOT EXISTS ${dbName}'"
-                    sh "docker exec -i taller-mariadb mariadb -u admin -padminpassword ${dbName} < server/db.sql"
+                    sh "tail -n +3 server/db.sql | docker exec -i taller-mariadb mariadb -u admin -padminpassword ${dbName}"
                 }
             }
         }
@@ -50,11 +50,15 @@ pipeline {
                     def branchTag = env.BRANCH_NAME.replace('/', '-')
                     def numericTag = "${env.BUILD_NUMBER}"
 
-                    def backendPort = '5000'
+                    def backendPort = '5003'
+                    def frontendPort = '6969'
+
                     if (env.BRANCH_NAME == 'main') {
-                        backendPort = '5001'
+                        backendPort = '5005'
+                        frontendPort = '6970'
                     } else if (env.BRANCH_NAME == 'staging') {
-                        backendPort = '5002'
+                        backendPort = '5004'
+                        frontendPort = '6971'
                     }
 
                     def viteApiUrl = ""
@@ -70,6 +74,25 @@ pipeline {
                     sh "docker build -t ${BACKEND_IMAGE}:${branchTag} ./server"
                     sh "docker tag ${BACKEND_IMAGE}:${branchTag} ${BACKEND_IMAGE}:${numericTag}"
                     sh "docker tag ${BACKEND_IMAGE}:${branchTag} ${BACKEND_IMAGE}:latest"
+
+                    echo "[BUILD] Generando nginx.conf con backendPort=${backendPort}"
+                    writeFile file: './presupuesto/nginx.conf', text: """
+server {
+    listen 80;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location /api/ {
+        proxy_pass http://host.docker.internal:${backendPort}/api/;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+    }
+
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+}
+"""
 
                     echo "[BUILD] Frontend - VITE_API_URL=${viteApiUrl} - tag: ${branchTag}"
                     sh "docker build --build-arg VITE_API_URL=${viteApiUrl} -t ${FRONTEND_IMAGE}:${branchTag} ./presupuesto"
@@ -124,16 +147,16 @@ pipeline {
             steps {
                 script {
                     def branchTag = env.BRANCH_NAME.replace('/', '-')
-                    def backendPort = '5000'
+                    def backendPort = '5003'
                     def frontendPort = '6969'
                     def dbSuffix = ''
 
                     if (env.BRANCH_NAME == 'main') {
-                        backendPort = '5001'
+                        backendPort = '5005'
                         frontendPort = '6970'
                         dbSuffix = '_dev'
                     } else if (env.BRANCH_NAME == 'staging') {
-                        backendPort = '5002'
+                        backendPort = '5004'
                         frontendPort = '6971'
                         dbSuffix = '_staging'
                     }
