@@ -1,61 +1,148 @@
 pipeline {
     agent any
 
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '5'))
+    }
+
     environment {
-        DOCKER_HUB = 'thelement012'
-        IMAGE_TAG = "${BUILD_NUMBER}"
-        PROJECT_DIR = '/mnt/user/appdata/PresupuestoProject'
+        DOCKER_USER = 'thelement012'
+        FRONTEND_IMAGE = "${DOCKER_USER}/presupuesto-frontend"
+        BACKEND_IMAGE = "${DOCKER_USER}/presupuesto-backend"
+        IP_UNRAID = '192.168.100.3'
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
+        stage('Build & Tag') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'staging'
+                    branch 'production'
+                }
             }
-        }
-
-        stage('Build Backend') {
             steps {
-                sh 'docker build -t ${DOCKER_HUB}/presupuesto-backend:${IMAGE_TAG} ./server'
-                sh 'docker tag ${DOCKER_HUB}/presupuesto-backend:${IMAGE_TAG} ${DOCKER_HUB}/presupuesto-backend:latest'
-            }
-        }
+                script {
+                    def branchTag = env.BRANCH_NAME.replace('/', '-')
+                    def numericTag = "${env.BUILD_NUMBER}"
 
-        stage('Build Frontend') {
-            steps {
-                sh 'docker build --build-arg VITE_API_URL= -t ${DOCKER_HUB}/presupuesto-frontend:${IMAGE_TAG} ./presupuesto'
-                sh 'docker tag ${DOCKER_HUB}/presupuesto-frontend:${IMAGE_TAG} ${DOCKER_HUB}/presupuesto-frontend:latest'
-            }
-        }
+                    def viteApiUrl = ""
+                    if (env.BRANCH_NAME != 'production') {
+                        viteApiUrl = "http://${IP_UNRAID}:5000"
+                    }
 
-        stage('Push to Docker Hub') {
-            steps {
-                withDockerRegistry([credentialsId: 'docker-hub', url: '']) {
-                    sh 'docker push ${DOCKER_HUB}/presupuesto-backend:${IMAGE_TAG}'
-                    sh 'docker push ${DOCKER_HUB}/presupuesto-backend:latest'
-                    sh 'docker push ${DOCKER_HUB}/presupuesto-frontend:${IMAGE_TAG}'
-                    sh 'docker push ${DOCKER_HUB}/presupuesto-frontend:latest'
+                    echo "[BUILD] Backend - tag: ${branchTag}"
+                    sh "docker build -t ${BACKEND_IMAGE}:${branchTag} ./server"
+                    sh "docker tag ${BACKEND_IMAGE}:${branchTag} ${BACKEND_IMAGE}:${numericTag}"
+                    sh "docker tag ${BACKEND_IMAGE}:${branchTag} ${BACKEND_IMAGE}:latest"
+
+                    echo "[BUILD] Frontend - VITE_API_URL=${viteApiUrl} - tag: ${branchTag}"
+                    sh "docker build --build-arg VITE_API_URL=${viteApiUrl} -t ${FRONTEND_IMAGE}:${branchTag} ./presupuesto"
+                    sh "docker tag ${FRONTEND_IMAGE}:${branchTag} ${FRONTEND_IMAGE}:${numericTag}"
+                    sh "docker tag ${FRONTEND_IMAGE}:${branchTag} ${FRONTEND_IMAGE}:latest"
                 }
             }
         }
 
-        stage('Deploy on unRAID') {
+        stage('Push to Docker Hub') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'staging'
+                    branch 'production'
+                }
+            }
             steps {
-                sh '''
-                    cd ${PROJECT_DIR}
-                    docker compose -f docker-compose.yml -f docker-compose.deploy.yml pull
-                    docker compose -f docker-compose.yml -f docker-compose.deploy.yml up -d
-                '''
+                script {
+                    echo '[PUSH] Subiendo imagenes a Docker Hub...'
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER_CREDS')]) {
+                        sh 'mkdir -p .docker'
+                        sh "export DOCKER_CONFIG=\$(pwd)/.docker && echo \$DOCKER_PASS | docker login -u \$DOCKER_USER_CREDS --password-stdin"
+
+                        def branchTag = env.BRANCH_NAME.replace('/', '-')
+                        def numericTag = "${env.BUILD_NUMBER}"
+
+                        def images = [
+                            "${BACKEND_IMAGE}:${branchTag}",
+                            "${BACKEND_IMAGE}:${numericTag}",
+                            "${BACKEND_IMAGE}:latest",
+                            "${FRONTEND_IMAGE}:${branchTag}",
+                            "${FRONTEND_IMAGE}:${numericTag}",
+                            "${FRONTEND_IMAGE}:latest"
+                        ]
+                        images.each { img ->
+                            sh "export DOCKER_CONFIG=\$(pwd)/.docker && docker push ${img}"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Deploy') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'staging'
+                    branch 'production'
+                }
+            }
+            steps {
+                script {
+                    def branchTag = env.BRANCH_NAME.replace('/', '-')
+                    def backendPort = '5000'
+                    def frontendPort = '6969'
+                    def dbSuffix = ''
+
+                    if (env.BRANCH_NAME == 'main') {
+                        backendPort = '5001'
+                        frontendPort = '6970'
+                        dbSuffix = '_dev'
+                    } else if (env.BRANCH_NAME == 'staging') {
+                        backendPort = '5002'
+                        frontendPort = '6971'
+                        dbSuffix = '_staging'
+                    }
+
+                    echo "[DEPLOY] Desplegando ${env.BRANCH_NAME} (backend:${backendPort}, frontend:${frontendPort})"
+
+                    sh "docker pull ${BACKEND_IMAGE}:${branchTag}"
+                    sh "docker pull ${FRONTEND_IMAGE}:${branchTag}"
+
+                    // Backend
+                    sh "docker stop presupuesto-backend-${branchTag} || true"
+                    sh "docker rm presupuesto-backend-${branchTag} || true"
+                    sh """
+                        docker run -d --name presupuesto-backend-${branchTag} \
+                            -p ${backendPort}:5000 \
+                            -e DB_HOST=${IP_UNRAID} \
+                            -e DB_PORT=3306 \
+                            -e DB_USER=root \
+                            -e DB_PASS=Santiagoklk12! \
+                            -e DB_NAME=presupuesto_mensual${dbSuffix} \
+                            -e PORT=5000 \
+                            ${BACKEND_IMAGE}:${branchTag}
+                    """
+
+                    // Frontend
+                    sh "docker stop presupuesto-frontend-${branchTag} || true"
+                    sh "docker rm presupuesto-frontend-${branchTag} || true"
+                    sh """
+                        docker run -d --name presupuesto-frontend-${branchTag} \
+                            -p ${frontendPort}:80 \
+                            --add-host host.docker.internal:host-gateway \
+                            ${FRONTEND_IMAGE}:${branchTag}
+                    """
+                }
             }
         }
     }
 
     post {
         failure {
-            echo "Pipeline falló. Revisa los logs para más detalles."
+            echo "[FAIL] Pipeline falló para ${env.BRANCH_NAME}"
         }
         success {
-            echo "Despliegue completado exitosamente."
+            echo "[SUCCESS] Pipeline completado para ${env.BRANCH_NAME}"
         }
     }
 }

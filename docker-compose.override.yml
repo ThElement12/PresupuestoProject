@@ -27,6 +27,8 @@ services:
       - ./presupuesto/eslint.config.js:/app/eslint.config.js
       - ./presupuesto/src:/app/src
       - ./presupuesto/public:/app/public
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       VITE_API_URL: http://localhost:5000
     networks:

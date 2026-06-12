@@ -9,7 +9,19 @@ Two independent Node.js packages (no workspace manager):
 | `presupuesto/` | Frontend (SPA) | React 18, Vite 6, react-router-dom 7, Tailwind CSS 3, ES Lint 9 flat config |
 | `server/` | Backend (REST API) | Express 4, MySQL2 (pool), ESM, bcryptjs, nodemon |
 
-No CI/CD, no TypeScript, no test framework.
+No TypeScript, no test framework.
+
+## CI/CD (Jenkins + Docker Hub)
+
+Pipeline en Jenkins (`Jenkinsfile`) que construye, pushea a Docker Hub y despliega en unRAID vía `docker run`.
+
+| Rama | Puerto backend | Puerto frontend | DB suffix |
+|------|---------------|----------------|-----------|
+| `main` | 5001 | 6970 | `_dev` |
+| `staging` | 5002 | 6971 | `_staging` |
+| `production` | 5000 | 6969 | `""` |
+
+Credencial de Jenkins: `dockerhub-creds` (Username with password).
 
 ## Docker
 
@@ -75,7 +87,7 @@ docker compose down -v   # detener y borrar volúmenes (¡cuidado! borra datos M
 ### Notas Docker
 
 - **MySQL**: El volumen `mysql_data` persiste la base. En staging usa `mysql_staging_data`. El archivo `server/db.sql` se ejecuta automáticamente al primer inicio.
-- **Nginx**: Sirve el frontend build y proxy reversa `/api/*` → `backend:5000/api/*`. Sin CORS porque todo corre en el mismo origen.
+- **Nginx**: Sirve el frontend build y proxy reversa `/api/*` → `host.docker.internal:5000/api/*` (resuelve al host desde el contenedor via `--add-host` o `extra_hosts`). Sin CORS porque todo corre en el mismo origen.
 - **Dev frontend**: Usa Vite dev server con HMR en puerto 5176. Los archivos `src/`, `index.html`, `vite.config.js`, etc. se montan como volúmenes.
 - **Dev backend**: Usa nodemon con el directorio `src/` montado como volumen.
 - **Dominio producción**: `budget.joseph-cloud.com` — Cloudflare Tunnel apunta a `localhost:6969`.
