@@ -70,7 +70,7 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3 bg-gray-50 p-4 rounded-lg">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-gray-700">Tipo</label>
           <select
@@ -117,7 +117,7 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
           required
         />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-gray-700">Monto USD</label>
           <input

@@ -47,7 +47,7 @@ export default function TransaccionForm({ periodoId, onSave, onCancel, initial }
 
   return (
     <form onSubmit={handleSubmit} className="bg-gray-50 p-4 rounded-lg space-y-3">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-gray-700">Tipo</label>
           <select
