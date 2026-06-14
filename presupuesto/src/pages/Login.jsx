@@ -6,6 +6,7 @@ import { api } from '../api/client';
 export default function Login() {
   const [correo, setCorreo] = useState('');
   const [pass, setPass] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ export default function Login() {
     setError('');
     try {
       const data = await api.login(correo, pass);
-      login(data.usuario);
+      login(data.usuario, rememberMe);
       navigate('/dashboard');
     } catch (err) {
       if (err.errorCode === 'USER_NOT_FOUND' || err.errorCode === 'INVALID_PASSWORD') {
@@ -61,6 +62,18 @@ export default function Login() {
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
+          </div>
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="rememberMe"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
+              Mantener la sesión iniciada
+            </label>
           </div>
           <button
             type="submit"
