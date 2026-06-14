@@ -4,6 +4,7 @@ import cors from "cors";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
+import errorHandler from "./middleware/errorHandler.js";
 
 dotenv.config();
 
@@ -15,6 +16,10 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+
+app.get("/", (req, res) => {
+  res.send(`Servidor funcionando. Conectado a la base de datos ${process.env.DB_NAME} en la URL ${process.env.DB_HOST}:${process.env.DB_PORT || 3306}`);
+});
 
 const loadRoutes = async () => {
   try {
@@ -33,11 +38,13 @@ const loadRoutes = async () => {
   }
 };
 
-loadRoutes();
+await loadRoutes();
 
-app.get("/", (req, res) => {
-  res.send(`Servidor funcionando. Conectado a la base de datos ${process.env.DB_NAME} en la URL ${process.env.DB_HOST}:${process.env.DB_PORT || 3306}`);
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: 'Recurso no encontrado', errorCode: 'NOT_FOUND' });
 });
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);

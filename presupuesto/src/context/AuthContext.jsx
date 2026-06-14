@@ -1,21 +1,19 @@
 import { createContext, useContext, useState } from 'react';
+import { getStoredUsuario, setStoredUsuario, clearStoredUsuario } from '../utils/authStorage';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [usuario, setUsuario] = useState(() => {
-    const stored = localStorage.getItem('usuario');
-    return stored ? JSON.parse(stored) : null;
-  });
+  const [usuario, setUsuario] = useState(getStoredUsuario);
 
-  const login = (userData) => {
+  const login = (userData, rememberMe = false) => {
     setUsuario(userData);
-    localStorage.setItem('usuario', JSON.stringify(userData));
+    setStoredUsuario(userData, rememberMe);
   };
 
   const logout = () => {
     setUsuario(null);
-    localStorage.removeItem('usuario');
+    clearStoredUsuario();
   };
 
   return (

@@ -6,6 +6,7 @@ export default function Register() {
   const [nombre, setNombre] = useState('');
   const [correo, setCorreo] = useState('');
   const [pass, setPass] = useState('');
+  const [confirmPass, setConfirmPass] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
@@ -14,18 +15,26 @@ export default function Register() {
     e.preventDefault();
     setError('');
     setSuccess('');
+    if (pass !== confirmPass) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
     try {
       await api.register(nombre, correo, pass);
       setSuccess('Usuario registrado exitosamente');
       setTimeout(() => navigate('/login'), 1500);
     } catch (err) {
-      setError(err.message);
+      if (err.errorCode === 'USER_EXISTS' || err.errorCode === 'REGISTRATION_ERROR') {
+        setError(err.message);
+      } else {
+        setError('Error del servidor');
+      }
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+      <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">
           Registrarse
         </h1>
@@ -76,9 +85,29 @@ export default function Register() {
               required
             />
           </div>
+          <div>
+            <label className="block text-gray-700 text-sm font-medium mb-1">
+              Confirmar Contraseña
+            </label>
+            <input
+              type="password"
+              value={confirmPass}
+              onChange={(e) => setConfirmPass(e.target.value)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+            {confirmPass.length > 0 && (
+              pass === confirmPass ? (
+                <p className="text-green-600 text-sm mt-1">Las contraseñas coinciden</p>
+              ) : (
+                <p className="text-red-600 text-sm mt-1">Las contraseñas no coinciden</p>
+              )
+            )}
+          </div>
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
+            disabled={confirmPass.length === 0 || pass !== confirmPass}
+            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Registrarse
           </button>

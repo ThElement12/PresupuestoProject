@@ -1,5 +1,16 @@
 # syntax=docker/dockerfile:1
 
+# ---- build: install all dependencies (incl. dev) ----
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+
+# ---- lint (CI only): docker build --target lint ./server ----
+FROM build AS lint
+RUN npm run lint
+
 # ---- deps: install production dependencies only ----
 FROM node:20-alpine AS deps
 WORKDIR /app

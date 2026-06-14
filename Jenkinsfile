@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    triggers {
+        githubPush()
+    }
+
     options {
         buildDiscarder(logRotator(numToKeepStr: '5'))
         timeout(time: 30, unit: 'MINUTES')
@@ -78,6 +82,13 @@ pipeline {
                     steps {
                         sh '''
                             docker build --target lint ./presupuesto
+                        '''
+                    }
+                }
+                stage('Lint Backend') {
+                    steps {
+                        sh '''
+                            docker build --target lint ./server
                         '''
                     }
                 }
