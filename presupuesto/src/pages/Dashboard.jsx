@@ -241,7 +241,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
           <p className="text-gray-500 capitalize">
@@ -271,34 +271,34 @@ export default function Dashboard() {
           </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="bg-white rounded-lg shadow p-6">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
+        <div className="bg-white rounded-lg shadow p-4 lg:p-6">
           <h3 className="text-gray-500 text-sm font-medium">Ingresos</h3>
-          <p className="text-2xl font-bold text-green-600">
+          <p className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600">
             RD$ {totalIngresos.toFixed(2)}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-4 lg:p-6">
           <h3 className="text-gray-500 text-sm font-medium">Gastos</h3>
-          <p className="text-2xl font-bold text-red-600">
+          <p className="text-lg sm:text-xl lg:text-2xl font-bold text-red-600">
             RD$ {totalGastos.toFixed(2)}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-4 lg:p-6">
           <h3 className="text-gray-500 text-sm font-medium">Balance Total</h3>
-          <p className={`text-2xl font-bold ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+          <p className={`text-lg sm:text-xl lg:text-2xl font-bold ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
             RD$ {balance.toFixed(2)}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow p-6 border-2 border-green-200">
+        <div className="bg-white rounded-lg shadow p-4 lg:p-6 border-2 border-green-200">
           <h3 className="text-gray-500 text-sm font-medium">Efectivo Restante</h3>
-          <p className={`text-2xl font-bold ${efectivoRestante >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <p className={`text-lg sm:text-xl lg:text-2xl font-bold ${efectivoRestante >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             RD$ {efectivoRestante.toFixed(2)}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow p-6 border-2 border-blue-200">
+        <div className="bg-white rounded-lg shadow p-4 lg:p-6 border-2 border-blue-200">
           <h3 className="text-gray-500 text-sm font-medium">Tarjeta/Banco Restante</h3>
-          <p className={`text-2xl font-bold ${tarjetaRestante >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+          <p className={`text-lg sm:text-xl lg:text-2xl font-bold ${tarjetaRestante >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
             RD$ {tarjetaRestante.toFixed(2)}
           </p>
         </div>
@@ -338,7 +338,7 @@ export default function Dashboard() {
       </div>
 
       <div className="space-y-4">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-bold text-gray-800">Movimientos</h2>
           <div className="flex items-center gap-3">
             {!showForm && (
@@ -364,7 +364,7 @@ export default function Dashboard() {
             onClick={() => { setShowForm(false); setEditingMov(null); }}
           >
             <div
-              className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto p-6"
+              className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto p-4 sm:p-6"
               onClick={(e) => e.stopPropagation()}
             >
               <MovimientoForm
@@ -402,7 +402,7 @@ export default function Dashboard() {
                         {ingresos.map((mov) => (
                           <div
                             key={mov.id}
-                            className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-3"
+                            className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-white border border-gray-200 rounded-lg p-3"
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <span className="inline-block w-2 h-2 rounded-full shrink-0 bg-green-500" />
@@ -411,19 +411,19 @@ export default function Dashboard() {
                                 {mov.metodo_pago}
                               </span>
                             </div>
-                            <div className="flex items-center gap-3 shrink-0 ml-3">
+                            <div className="flex items-center justify-end gap-3 shrink-0 sm:ml-3">
                               <span className="font-medium text-green-600">
                                 RD$ {parseFloat(mov.totalRD).toFixed(2)}
                               </span>
                               <button
                                 onClick={() => handleEdit(mov)}
-                                className="text-blue-600 hover:text-blue-800 text-sm"
+                                className="text-blue-600 hover:text-blue-800 text-sm py-1"
                               >
                                 Editar
                               </button>
                               <button
                                 onClick={() => handleDelete(mov.id)}
-                                className="text-red-600 hover:text-red-800 text-sm"
+                                className="text-red-600 hover:text-red-800 text-sm py-1"
                               >
                                 Borrar
                               </button>
@@ -441,7 +441,7 @@ export default function Dashboard() {
                         {gastosFijos.map((mov) => (
                           <div
                             key={mov.id}
-                            className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-3"
+                            className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-white border border-gray-200 rounded-lg p-3"
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <input
@@ -456,7 +456,7 @@ export default function Dashboard() {
                                 {mov.metodo_pago}
                               </span>
                             </div>
-                            <div className="flex items-center gap-3 shrink-0 ml-3">
+                            <div className="flex items-center justify-end gap-3 shrink-0 sm:ml-3">
                               <span className="font-medium text-red-600">
                                 RD$ {parseFloat(mov.totalRD).toFixed(2)}
                               </span>
@@ -471,13 +471,13 @@ export default function Dashboard() {
                               </span>
                               <button
                                 onClick={() => handleEdit(mov)}
-                                className="text-blue-600 hover:text-blue-800 text-sm"
+                                className="text-blue-600 hover:text-blue-800 text-sm py-1"
                               >
                                 Editar
                               </button>
                               <button
                                 onClick={() => handleDelete(mov.id)}
-                                className="text-red-600 hover:text-red-800 text-sm"
+                                className="text-red-600 hover:text-red-800 text-sm py-1"
                               >
                                 Borrar
                               </button>
@@ -495,7 +495,7 @@ export default function Dashboard() {
                         {gastosDinamicos.map((mov) => (
                           <div
                             key={mov.id}
-                            className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-3"
+                            className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-white border border-gray-200 rounded-lg p-3"
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <input
@@ -510,7 +510,7 @@ export default function Dashboard() {
                                 {mov.metodo_pago}
                               </span>
                             </div>
-                            <div className="flex items-center gap-3 shrink-0 ml-3">
+                            <div className="flex items-center justify-end gap-3 shrink-0 sm:ml-3">
                               <span className="font-medium text-red-600">
                                 RD$ {parseFloat(mov.totalRD).toFixed(2)}
                               </span>
@@ -525,13 +525,13 @@ export default function Dashboard() {
                               </span>
                               <button
                                 onClick={() => handleEdit(mov)}
-                                className="text-blue-600 hover:text-blue-800 text-sm"
+                                className="text-blue-600 hover:text-blue-800 text-sm py-1"
                               >
                                 Editar
                               </button>
                               <button
                                 onClick={() => handleDelete(mov.id)}
-                                className="text-red-600 hover:text-red-800 text-sm"
+                                className="text-red-600 hover:text-red-800 text-sm py-1"
                               >
                                 Borrar
                               </button>
@@ -557,7 +557,7 @@ export default function Dashboard() {
             onClick={() => setShowConfigModal(false)}
           >
             <div
-              className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6"
+              className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-4 sm:p-6"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-6">
@@ -633,7 +633,7 @@ export default function Dashboard() {
       </div>
 
       <div className="space-y-4">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-bold text-gray-800">Depósitos y Retiros</h2>
           <div className="flex items-center gap-3">
             {!showTransForm && (
@@ -665,9 +665,9 @@ export default function Dashboard() {
             {transacciones.map((t) => (
               <div
                 key={t.id}
-                className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-3"
+                className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-white border border-gray-200 rounded-lg p-3"
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
                   <span
                     className={`inline-block w-2 h-2 rounded-full shrink-0 ${
                       t.tipo === 'deposito' ? 'bg-blue-500' : 'bg-green-500'
@@ -684,19 +684,19 @@ export default function Dashboard() {
                     {t.tipo === 'deposito' ? 'Depósito → Banco' : 'Retiro → Efectivo'}
                   </span>
                 </div>
-                <div className="flex items-center gap-3 shrink-0 ml-3">
+                <div className="flex items-center justify-end gap-3 shrink-0 sm:ml-3">
                   <span className="font-medium text-gray-700">
                     RD$ {parseFloat(t.monto).toFixed(2)}
                   </span>
                   <button
                     onClick={() => handleEditTrans(t)}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
+                    className="text-blue-600 hover:text-blue-800 text-sm py-1"
                   >
                     Editar
                   </button>
                   <button
                     onClick={() => handleDeleteTrans(t.id)}
-                    className="text-red-600 hover:text-red-800 text-sm"
+                    className="text-red-600 hover:text-red-800 text-sm py-1"
                   >
                     Borrar
                   </button>

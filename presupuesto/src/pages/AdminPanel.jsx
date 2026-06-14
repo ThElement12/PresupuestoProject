@@ -43,7 +43,7 @@ export default function AdminPanel() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex items-end gap-3">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Nueva tasa (RD$ por 1 USD)
@@ -60,7 +60,7 @@ export default function AdminPanel() {
           </div>
           <button
             type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+            className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
           >
             Actualizar
           </button>

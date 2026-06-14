@@ -1,18 +1,20 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import db from '../database.js';
+import AppError from '../utils/AppError.js';
+import asyncHandler from '../utils/asyncHandler.js';
 
 const router = express.Router();
 
-router.post('/register', async (req, res) => {
+router.post('/register', asyncHandler(async (req, res) => {
   const { nombre, correo, pass } = req.body;
 
-  try {
-    const [existingUser] = await db.query('SELECT * FROM Usuario WHERE correo = ?', [correo]);
-    if (existingUser.length > 0) {
-      return res.status(400).json({ message: 'El usuario ya existe' });
-    }
+  const [existingUser] = await db.query('SELECT * FROM Usuario WHERE correo = ?', [correo]);
+  if (existingUser.length > 0) {
+    throw new AppError(409, 'El usuario ya existe', 'USER_EXISTS');
+  }
 
+  try {
     const [[{ count }]] = await db.query('SELECT COUNT(*) AS count FROM Usuario');
     const rol = count === 0 ? 'admin' : 'user';
 
@@ -28,37 +30,34 @@ router.post('/register', async (req, res) => {
       'INSERT INTO Metodo (usuario_id, metodo_pago, es_efectivo) VALUES (?, ?, ?)',
       [result.insertId, 'Efectivo', true]
     );
-
-    res.status(201).json({ message: 'Usuario registrado exitosamente' });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Error al registrar el usuario' });
+    throw new AppError(500, 'Error al registrar el usuario', 'REGISTRATION_ERROR');
   }
-});
 
-router.post('/login', async (req, res) => {
+  res.status(201).json({ success: true, message: 'Usuario registrado exitosamente' });
+}));
+
+router.post('/login', asyncHandler(async (req, res) => {
   const { correo, pass } = req.body;
 
-  try {
-    const [user] = await db.query('SELECT * FROM Usuario WHERE correo = ?', [correo]);
-    if (user.length === 0) {
-      return res.status(400).json({ message: 'Credenciales incorrectas' });
-    }
-
-    const validPassword = await bcrypt.compare(pass, user[0].pass);
-    if (!validPassword) {
-      return res.status(400).json({ message: 'Credenciales incorrectas' });
-    }
-
-    const { id, nombre, correo: correoUsuario, rol } = user[0];
-
-    res.status(200).json({
-      message: 'Inicio de sesión exitoso', usuario: { id, nombre, correo: correoUsuario, rol }
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error al iniciar sesión' });
+  const [user] = await db.query('SELECT * FROM Usuario WHERE correo = ?', [correo]);
+  if (user.length === 0) {
+    throw new AppError(401, 'Usuario no encontrado', 'USER_NOT_FOUND');
   }
-});
+
+  const validPassword = await bcrypt.compare(pass, user[0].pass);
+  if (!validPassword) {
+    throw new AppError(401, 'Contraseña incorrecta', 'INVALID_PASSWORD');
+  }
+
+  const { id, nombre, correo: correoUsuario, rol } = user[0];
+
+  res.status(200).json({
+    success: true,
+    message: 'Inicio de sesión exitoso',
+    usuario: { id, nombre, correo: correoUsuario, rol }
+  });
+}));
 
 export default router;
