@@ -6,6 +6,7 @@ export default function Register() {
   const [nombre, setNombre] = useState('');
   const [correo, setCorreo] = useState('');
   const [pass, setPass] = useState('');
+  const [confirmPass, setConfirmPass] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
@@ -14,6 +15,10 @@ export default function Register() {
     e.preventDefault();
     setError('');
     setSuccess('');
+    if (pass !== confirmPass) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
     try {
       await api.register(nombre, correo, pass);
       setSuccess('Usuario registrado exitosamente');
@@ -80,9 +85,29 @@ export default function Register() {
               required
             />
           </div>
+          <div>
+            <label className="block text-gray-700 text-sm font-medium mb-1">
+              Confirmar Contraseña
+            </label>
+            <input
+              type="password"
+              value={confirmPass}
+              onChange={(e) => setConfirmPass(e.target.value)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+            {confirmPass.length > 0 && (
+              pass === confirmPass ? (
+                <p className="text-green-600 text-sm mt-1">Las contraseñas coinciden</p>
+              ) : (
+                <p className="text-red-600 text-sm mt-1">Las contraseñas no coinciden</p>
+              )
+            )}
+          </div>
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
+            disabled={confirmPass.length === 0 || pass !== confirmPass}
+            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Registrarse
           </button>
