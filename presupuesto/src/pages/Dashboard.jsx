@@ -462,7 +462,9 @@ export default function Dashboard() {
                     <div>
                       <h3 className="text-md font-bold text-red-700 mb-2">Gastos Fijos</h3>
                       <div className="space-y-2">
-                        {gastosFijos.map((mov) => (
+                        {gastosFijos.map((mov) => {
+                          const esCashback = parseFloat(mov.totalRD) < 0;
+                          return (
                           <div
                             key={mov.id}
                             className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-white border border-gray-200 rounded-lg p-3"
@@ -474,16 +476,19 @@ export default function Dashboard() {
                                 onChange={() => handleTogglePagado(mov.id, mov.pagado)}
                                 className="h-4 w-4 shrink-0"
                               />
-                              <span className="inline-block w-2 h-2 rounded-full shrink-0 bg-red-500" />
+                              <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${esCashback ? 'bg-green-500' : 'bg-red-500'}`} />
                               <span className="font-medium text-gray-800 truncate">{mov.descripcion}</span>
                               <span className="text-sm text-gray-500 shrink-0">
                                 {mov.metodo_pago}
                               </span>
                             </div>
                             <div className="flex items-center justify-end gap-3 shrink-0 sm:ml-3">
-                              <span className="font-medium text-red-600">
-                                RD$ {parseFloat(mov.totalRD).toFixed(2)}
+                              <span className={`font-medium ${esCashback ? 'text-green-600' : 'text-red-600'}`}>
+                                {esCashback ? '+' : ''}RD$ {Math.abs(parseFloat(mov.totalRD)).toFixed(2)}
                               </span>
+                              {esCashback && (
+                                <span className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700">Cashback</span>
+                              )}
                               <span
                                 className={`text-xs px-2 py-0.5 rounded ${
                                   mov.pagado
@@ -507,7 +512,8 @@ export default function Dashboard() {
                               </button>
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -516,7 +522,9 @@ export default function Dashboard() {
                     <div>
                       <h3 className="text-md font-bold text-orange-700 mb-2">Gastos Dinámicos</h3>
                       <div className="space-y-2">
-                        {gastosDinamicos.map((mov) => (
+                        {gastosDinamicos.map((mov) => {
+                          const esCashback = parseFloat(mov.totalRD) < 0;
+                          return (
                           <div
                             key={mov.id}
                             className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-white border border-gray-200 rounded-lg p-3"
@@ -528,16 +536,19 @@ export default function Dashboard() {
                                 onChange={() => handleTogglePagado(mov.id, mov.pagado)}
                                 className="h-4 w-4 shrink-0"
                               />
-                              <span className="inline-block w-2 h-2 rounded-full shrink-0 bg-red-500" />
+                              <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${esCashback ? 'bg-green-500' : 'bg-red-500'}`} />
                               <span className="font-medium text-gray-800 truncate">{mov.descripcion}</span>
                               <span className="text-sm text-gray-500 shrink-0">
                                 {mov.metodo_pago}
                               </span>
                             </div>
                             <div className="flex items-center justify-end gap-3 shrink-0 sm:ml-3">
-                              <span className="font-medium text-red-600">
-                                RD$ {parseFloat(mov.totalRD).toFixed(2)}
+                              <span className={`font-medium ${esCashback ? 'text-green-600' : 'text-red-600'}`}>
+                                {esCashback ? '+' : ''}RD$ {Math.abs(parseFloat(mov.totalRD)).toFixed(2)}
                               </span>
+                              {esCashback && (
+                                <span className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700">Cashback</span>
+                              )}
                               <span
                                 className={`text-xs px-2 py-0.5 rounded ${
                                   mov.pagado
@@ -561,7 +572,8 @@ export default function Dashboard() {
                               </button>
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
