@@ -154,9 +154,12 @@ export default function Dashboard() {
   };
 
   const periodoData = useMemo(() => {
-    const totalIngresos = movements
-      .filter((m) => m.tipo === 'Ingreso')
-      .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0);
+    const efectivoInicial = parseFloat(periodoActual?.efectivo_inicial || 0);
+    const totalIngresos =
+      movements
+        .filter((m) => m.tipo === 'Ingreso')
+        .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0)
+      + efectivoInicial;
     const totalGastos = movements
       .filter((m) => m.tipo === 'Gasto')
       .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0);
@@ -189,9 +192,8 @@ export default function Dashboard() {
     const noCashGastos = movements
       .filter((m) => m.tipo === 'Gasto' && !m.es_efectivo)
       .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0);
-    let efectivoRestante =
-      parseFloat(periodoActual?.efectivo_inicial || 0) - cashGastos;
-    let tarjetaRestante = totalIngresos - noCashGastos;
+    let efectivoRestante = efectivoInicial - cashGastos;
+    let tarjetaRestante = (totalIngresos - efectivoInicial) - noCashGastos;
 
     for (const t of transacciones) {
       const monto = parseFloat(t.monto) || 0;
@@ -391,23 +393,36 @@ export default function Dashboard() {
           <p className="text-gray-500 text-sm">No hay movimientos en este periodo.</p>
         ) : null}
 
-        {!showForm && movements.length > 0 && (
+        {!showForm && (movements.length > 0 || parseFloat(periodoActual?.efectivo_inicial || 0) > 0) && (
           <>
             {(() => {
               const ingresos = movements.filter((m) => m.tipo === 'Ingreso');
               const gastosFijos = movements.filter((m) => m.tipo === 'Gasto' && m.isFijo);
               const gastosDinamicos = movements.filter((m) => m.tipo === 'Gasto' && !m.isFijo);
+              const efectivoInicial = parseFloat(periodoActual?.efectivo_inicial || 0);
               return (
                 <>
-                  {ingresos.length > 0 && (
+                  {(ingresos.length > 0 || efectivoInicial > 0) && (
                     <div>
                       <h3 className="text-md font-bold text-green-700 mb-2">
                         Ingresos
                         <span className="text-sm font-normal text-gray-500 ml-2">
-                          (RD$ {ingresos.reduce((s, m) => s + parseFloat(m.totalRD || 0), 0).toFixed(2)})
+                          (RD$ {(ingresos.reduce((s, m) => s + parseFloat(m.totalRD || 0), 0) + efectivoInicial).toFixed(2)})
                         </span>
                       </h3>
                       <div className="space-y-2">
+                        {efectivoInicial > 0 && (
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-white border border-green-200 rounded-lg p-3">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <span className="inline-block w-2 h-2 rounded-full shrink-0 bg-green-500" />
+                              <span className="font-medium text-gray-800">Efectivo Inicial</span>
+                              <span className="text-sm text-gray-500 shrink-0">Efectivo</span>
+                            </div>
+                            <span className="font-medium text-green-600 text-right">
+                              RD$ {efectivoInicial.toFixed(2)}
+                            </span>
+                          </div>
+                        )}
                         {ingresos.map((mov) => (
                           <div
                             key={mov.id}
