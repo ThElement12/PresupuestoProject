@@ -5,6 +5,7 @@ import { api } from '../api/client';
 import ProgressBars from '../components/ProgressBars';
 import MovimientoForm from '../components/MovimientoForm';
 import TransaccionForm from '../components/TransaccionForm';
+import EfectivoInicialPrompt from '../components/EfectivoInicialPrompt';
 
 export default function Dashboard() {
   const { usuario } = useAuth();
@@ -41,6 +42,7 @@ export default function Dashboard() {
 
   const { mes, periodos } = data || {};
   const periodoActual = periodos?.find((p) => p.id === selectedPeriodo) || periodos?.[0];
+  const efectivoResuelto = !!periodoActual?.efectivo_inicial_confirmado;
 
   useEffect(() => {
     setMovements(periodoActual?.movimientos || []);
@@ -119,12 +121,16 @@ export default function Dashboard() {
     }
   };
 
+  const refreshDashboard = async () => {
+    const d = await api.getDashboard(usuario.id);
+    setData(d);
+  };
+
   const handleEfectivoSave = async () => {
     try {
-      await api.editarPeriodo(periodoActual.id, { efectivo_inicial: parseFloat(efectivoInput) || 0 });
+      await api.editarPeriodo(periodoActual.id, { efectivo_inicial: parseFloat(efectivoInput) || 0, efectivo_inicial_confirmado: true });
       setEditEfectivo(false);
-      const d = await api.getDashboard(usuario.id);
-      setData(d);
+      await refreshDashboard();
     } catch (err) {
       alert(err.message);
     }
@@ -135,8 +141,7 @@ export default function Dashboard() {
     try {
       await api.limpiarPeriodo(periodoActual.id);
       setShowConfigModal(false);
-      const d = await api.getDashboard(usuario.id);
-      setData(d);
+      await refreshDashboard();
     } catch (err) {
       alert(err.message);
     }
@@ -271,6 +276,10 @@ export default function Dashboard() {
           </div>
       </div>
 
+      {periodoActual && !efectivoResuelto && (
+        <EfectivoInicialPrompt periodo={periodoActual} onResolved={refreshDashboard} />
+      )}
+
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
         <div className="bg-white rounded-lg shadow p-4 lg:p-6">
           <h3 className="text-gray-500 text-sm font-medium">Ingresos</h3>
@@ -341,7 +350,7 @@ export default function Dashboard() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-bold text-gray-800">Movimientos</h2>
           <div className="flex items-center gap-3">
-            {!showForm && (
+            {!showForm && efectivoResuelto && (
               <button
                 onClick={() => { setEditingMov(null); setShowForm(true); }}
                 className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm"
@@ -636,7 +645,7 @@ export default function Dashboard() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-bold text-gray-800">Depósitos y Retiros</h2>
           <div className="flex items-center gap-3">
-            {!showTransForm && (
+            {!showTransForm && efectivoResuelto && (
               <button
                 onClick={() => { setEditingTrans(null); setShowTransForm(true); }}
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm"

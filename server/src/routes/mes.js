@@ -83,7 +83,7 @@ router.get('/mes/:id', asyncHandler(async (req, res) => {
 }));
 
 router.post('/nuevo-mes', asyncHandler(async (req, res) => {
-  const { usuario_id, porcentaje_gastos, porcentaje_gustos, porcentaje_ahorros, periodicidad, fecha_inicio_mes, fecha_fin_mes, efectivo_inicial = 0 } = req.body;
+  const { usuario_id, porcentaje_gastos, porcentaje_gustos, porcentaje_ahorros, periodicidad, fecha_inicio_mes, fecha_fin_mes } = req.body;
 
   const total = parseFloat(porcentaje_gastos) + parseFloat(porcentaje_gustos) + parseFloat(porcentaje_ahorros);
   if (total !== 100) {
@@ -101,10 +101,9 @@ router.post('/nuevo-mes', asyncHandler(async (req, res) => {
   const createdPeriods = [];
   for (let i = 0; i < periods.length; i++) {
     const p = periods[i];
-    const efectivo = i === 0 ? parseFloat(efectivo_inicial) || 0 : 0;
     const [periodResult] = await db.query(
-      'INSERT INTO Periodo (mes_id, fecha_inicio, fecha_fin, efectivo_inicial) VALUES (?, ?, ?, ?)',
-      [p.mes_id, p.fecha_inicio, p.fecha_fin, efectivo]
+      'INSERT INTO Periodo (mes_id, fecha_inicio, fecha_fin, efectivo_inicial, efectivo_inicial_confirmado) VALUES (?, ?, ?, ?, ?)',
+      [p.mes_id, p.fecha_inicio, p.fecha_fin, 0, false]
     );
 
     const periodoId = periodResult.insertId;
