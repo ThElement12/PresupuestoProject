@@ -206,6 +206,13 @@ export default function Dashboard() {
       }
     }
 
+    const totalGastosFijos = movements
+      .filter((m) => m.tipo === 'Gasto' && m.isFijo)
+      .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0);
+    const totalGastosDinamicos = movements
+      .filter((m) => m.tipo === 'Gasto' && !m.isFijo)
+      .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0);
+
     return {
       totalIngresos,
       totalGastos,
@@ -213,6 +220,8 @@ export default function Dashboard() {
       porMetodo,
       efectivoRestante,
       tarjetaRestante,
+      totalGastosFijos,
+      totalGastosDinamicos,
     };
   }, [movements, periodoActual, transacciones]);
 
@@ -223,6 +232,8 @@ export default function Dashboard() {
     porMetodo,
     efectivoRestante,
     tarjetaRestante,
+    totalGastosFijos,
+    totalGastosDinamicos,
   } = periodoData;
 
   if (loading) {
@@ -318,7 +329,51 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-bold text-gray-800 mb-4">Distribución del Presupuesto</h2>
-          <ProgressBars mes={mes} />
+          <ProgressBars mes={mes} totalIngresos={totalIngresos} />
+          {mes && (
+            <>
+              <hr className="my-4 border-gray-200" />
+              <h3 className="text-sm font-semibold text-gray-600 mb-3">Uso por categoría</h3>
+              <div className="space-y-4">
+                {[
+                  {
+                    label: 'Gastos Fijos',
+                    asignado: (mes.porcentajeGastos / 100) * totalIngresos,
+                    gastado: totalGastosFijos,
+                    barColor: 'bg-red-500',
+                    textColor: 'text-red-600',
+                  },
+                  {
+                    label: 'Gustos',
+                    asignado: (mes.porcentajeGustos / 100) * totalIngresos,
+                    gastado: totalGastosDinamicos,
+                    barColor: 'bg-yellow-500',
+                    textColor: 'text-yellow-600',
+                  },
+                ].map(({ label, asignado, gastado, barColor, textColor }) => {
+                  const restante = asignado - gastado;
+                  const pctUsado = asignado > 0 ? Math.min((gastado / asignado) * 100, 100) : 0;
+                  return (
+                    <div key={label}>
+                      <div className="flex justify-between items-baseline mb-1">
+                        <span className={`text-sm font-medium ${textColor}`}>{label}</span>
+                        <span className="text-xs text-gray-400">de RD$ {asignado.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-gray-500">Gastado: <span className="font-medium text-gray-700">RD$ {gastado.toFixed(2)}</span></span>
+                        <span className={`font-semibold ${restante >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          Restante: RD$ {restante.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className={`${barColor} h-2 rounded-full`} style={{ width: `${pctUsado}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
