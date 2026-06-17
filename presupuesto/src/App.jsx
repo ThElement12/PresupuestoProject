@@ -12,6 +12,7 @@ import MesDetail from './pages/MesDetail';
 import Metodos from './pages/Metodos';
 import NuevoMetodo from './pages/NuevoMetodo';
 import AdminPanel from './pages/AdminPanel';
+import Ayuda from './pages/Ayuda';
 
 function App() {
   return (
@@ -43,6 +44,10 @@ function App() {
           <Route
             path="/admin"
             element={<ProtectedRoute><AdminRoute><Layout><AdminPanel /></Layout></AdminRoute></ProtectedRoute>}
+          />
+          <Route
+            path="/ayuda"
+            element={<ProtectedRoute><Layout><Ayuda /></Layout></ProtectedRoute>}
           />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

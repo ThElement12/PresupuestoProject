@@ -89,7 +89,7 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
         </div>
         {parseInt(form.tipoMovimiento_id) === 2 && (
           <div>
-            <label className="block text-sm font-medium text-gray-700">Método</label>
+            <label className="block text-sm font-medium text-gray-700">Forma de pago</label>
             <select
               name="metodo_id"
               value={form.metodo_id}
@@ -173,7 +173,7 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
               checked={form.isFijo}
               onChange={handleChange}
             />
-            Movimiento fijo
+            ¿Se repite cada mes?
           </label>
           {parseInt(form.tipoMovimiento_id) !== 1 && (
             <label className="flex items-center gap-2 text-sm">
