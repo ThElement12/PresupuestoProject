@@ -12,6 +12,8 @@ export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedPeriodo, setSelectedPeriodo] = useState(null);
+  const [allMeses, setAllMeses] = useState([]);
+  const [selectedMesId, setSelectedMesId] = useState(null);
   const [movements, setMovements] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingMov, setEditingMov] = useState(null);
@@ -26,14 +28,34 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!usuario) return;
-    api.getDashboard(usuario.id)
+    api.getMeses(usuario.id)
+      .then((meses) => {
+        const sorted = [...meses].sort((a, b) => b.id - a.id);
+        setAllMeses(sorted);
+        if (sorted.length > 0) {
+          setSelectedMesId(sorted[0].id);
+        } else {
+          setLoading(false);
+        }
+      })
+      .catch(console.error);
+  }, [usuario]);
+
+  useEffect(() => {
+    if (!usuario || !selectedMesId) return;
+    setLoading(true);
+    api.getDashboard(usuario.id, selectedMesId)
       .then((d) => {
         setData(d);
-        if (d.periodos?.length > 0) setSelectedPeriodo(d.periodos[0].id);
+        const todayStr = new Date().toISOString().split('T')[0];
+        const activo = d.periodos?.find(
+          (p) => p.fecha_inicio.slice(0, 10) <= todayStr && todayStr <= p.fecha_fin.slice(0, 10)
+        );
+        setSelectedPeriodo(activo?.id ?? d.periodos?.[0]?.id ?? null);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [usuario]);
+  }, [usuario, selectedMesId]);
 
   useEffect(() => {
     if (!usuario) return;
@@ -43,6 +65,23 @@ export default function Dashboard() {
   const { mes, periodos } = data || {};
   const periodoActual = periodos?.find((p) => p.id === selectedPeriodo) || periodos?.[0];
   const efectivoResuelto = !!periodoActual?.efectivo_inicial_confirmado;
+
+  const today = new Date().toISOString().split('T')[0];
+  const esUltimoMes = allMeses.length > 0 && selectedMesId === allMeses[0].id;
+  const hayPeriodoActivo = periodos?.some((p) => p.fecha_inicio.slice(0, 10) <= today && today <= p.fecha_fin.slice(0, 10));
+  const mesVencido = esUltimoMes && periodos?.length > 0 && !hayPeriodoActivo;
+
+  const formatDate = (iso) => {
+    const str = iso.slice(0, 10);
+    const [, m, d] = str.split('-');
+    return `${d}/${m}`;
+  };
+
+  const mesLabel = (m) => {
+    if (!m.fecha_inicio) return `Mes #${m.id}`;
+    const d = new Date(m.fecha_inicio.slice(0, 10) + 'T12:00:00');
+    return d.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
+  };
 
   useEffect(() => {
     setMovements(periodoActual?.movimientos || []);
@@ -122,7 +161,7 @@ export default function Dashboard() {
   };
 
   const refreshDashboard = async () => {
-    const d = await api.getDashboard(usuario.id);
+    const d = await api.getDashboard(usuario.id, selectedMesId);
     setData(d);
   };
 
@@ -266,7 +305,42 @@ export default function Dashboard() {
             Periodicidad: {mes.periodicidad} | {periodos.length} periodo{periodos.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                const idx = allMeses.findIndex((m) => m.id === selectedMesId);
+                if (idx < allMeses.length - 1) setSelectedMesId(allMeses[idx + 1].id);
+              }}
+              disabled={allMeses.findIndex((m) => m.id === selectedMesId) >= allMeses.length - 1}
+              className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30 text-gray-600"
+              title="Mes anterior"
+            >
+              &#8592;
+            </button>
+            <select
+              value={selectedMesId || ''}
+              onChange={(e) => setSelectedMesId(parseInt(e.target.value))}
+              className="border border-gray-300 rounded-md px-2 py-1.5 text-sm"
+            >
+              {allMeses.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {mesLabel(m)}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => {
+                const idx = allMeses.findIndex((m) => m.id === selectedMesId);
+                if (idx > 0) setSelectedMesId(allMeses[idx - 1].id);
+              }}
+              disabled={allMeses.findIndex((m) => m.id === selectedMesId) <= 0}
+              className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30 text-gray-600"
+              title="Mes siguiente"
+            >
+              &#8594;
+            </button>
+          </div>
           {periodos.length > 1 && (
             <select
               value={selectedPeriodo || ''}
@@ -275,19 +349,31 @@ export default function Dashboard() {
             >
               {periodos.map((p, i) => (
                 <option key={p.id} value={p.id}>
-                  Periodo {i + 1}
+                  Periodo {i + 1}: {formatDate(p.fecha_inicio)} – {formatDate(p.fecha_fin)}
                 </option>
               ))}
             </select>
           )}
-            <Link
-              to="/mes/nuevo"
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-            >
-              Nuevo Mes
-            </Link>
-          </div>
+          <Link
+            to="/mes/nuevo"
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+          >
+            Nuevo Mes
+          </Link>
+        </div>
       </div>
+
+      {mesVencido && (
+        <div className="bg-amber-50 border border-amber-300 text-amber-800 rounded-lg px-4 py-3 flex items-center justify-between">
+          <span>El mes actual ha finalizado. Crea un nuevo mes para continuar.</span>
+          <Link
+            to="/mes/nuevo"
+            className="ml-4 bg-amber-600 text-white px-3 py-1 rounded hover:bg-amber-700 text-sm whitespace-nowrap"
+          >
+            Nuevo Mes
+          </Link>
+        </div>
+      )}
 
       {periodoActual && !efectivoResuelto && (
         <EfectivoInicialPrompt periodo={periodoActual} onResolved={refreshDashboard} />
