@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS Periodo (
   fecha_inicio DATE NOT NULL,
   fecha_fin DATE NOT NULL,
   efectivo_inicial DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  efectivo_inicial_confirmado BOOLEAN NOT NULL DEFAULT FALSE,
   CONSTRAINT fk_periodo_mes FOREIGN KEY (mes_id) REFERENCES Mes(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 

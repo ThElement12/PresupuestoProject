@@ -34,7 +34,8 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
 
   const selectedMetodo = metodos.find((m) => m.id === parseInt(form.metodo_id));
   const esEfectivo = selectedMetodo?.es_efectivo === true;
-  const esGastoFijo = parseInt(form.tipoMovimiento_id) === 2 && form.isFijo && !esEfectivo;
+  const esGasto = parseInt(form.tipoMovimiento_id) === 2;
+  const esGastoFijo = esGasto && form.isFijo && !esEfectivo;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -126,7 +127,7 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
             value={form.monto_usd}
             onChange={handleChange}
             step="0.01"
-            min="0"
+            min={esGasto ? undefined : "0"}
             className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm"
           />
         </div>
@@ -138,11 +139,16 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
             value={form.monto_rd}
             onChange={handleChange}
             step="0.01"
-            min="0"
+            min={esGasto ? undefined : "0"}
             className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm"
           />
         </div>
       </div>
+      {esGasto && (
+        <p className="text-xs text-gray-400">
+          Usa valores negativos para cashbacks o descuentos.
+        </p>
+      )}
       {esGastoFijo && (
         <div>
           <label className="block text-sm font-medium text-gray-700">Día de cobro</label>

@@ -51,7 +51,7 @@ router.get('/dashboard/:usuario_id', asyncHandler(async (req, res) => {
       [periodo.id]
     );
 
-    let ingresos = 0;
+    let ingresos = parseFloat(periodo.efectivo_inicial) || 0;
     let gastos = 0;
     const movsEnriquecidos = [];
 
@@ -106,7 +106,7 @@ router.get('/dashboard/:usuario_id', asyncHandler(async (req, res) => {
   }
 
   let efectivoRestante = totalEfectivoInicial - cashGastos;
-  let tarjetaRestante = totalIngresos - noCashGastos;
+  let tarjetaRestante = (totalIngresos - totalEfectivoInicial) - noCashGastos;
 
   for (const periodo of periodosConMovimientos) {
     for (const t of periodo.transacciones) {
@@ -128,7 +128,6 @@ router.get('/dashboard/:usuario_id', asyncHandler(async (req, res) => {
       totalIngresos,
       totalGastos,
       balance: totalIngresos - totalGastos,
-      balanceTotal: totalIngresos + totalEfectivoInicial - totalGastos,
       totalEfectivoInicial,
     },
     porMetodo,

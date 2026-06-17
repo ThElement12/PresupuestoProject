@@ -12,7 +12,7 @@ router.get('/periodo/:id_mes', asyncHandler(async (req, res) => {
 }));
 
 router.post('/nuevo_periodo', asyncHandler(async (req, res) => {
-  const { id_mes, fecha_inicio, fecha_fin, efectivo_inicial = 0 } = req.body;
+  const { id_mes, fecha_inicio, fecha_fin, efectivo_inicial = 0, efectivo_inicial_confirmado = false } = req.body;
   const inicio = new Date(fecha_inicio);
   const fin = new Date(fecha_fin);
 
@@ -21,20 +21,21 @@ router.post('/nuevo_periodo', asyncHandler(async (req, res) => {
   }
 
   const [result] = await db.query(
-    'INSERT INTO Periodo (mes_id, fecha_inicio, fecha_fin, efectivo_inicial) VALUES (?, ?, ?, ?)',
-    [id_mes, inicio, fin, parseFloat(efectivo_inicial) || 0]
+    'INSERT INTO Periodo (mes_id, fecha_inicio, fecha_fin, efectivo_inicial, efectivo_inicial_confirmado) VALUES (?, ?, ?, ?, ?)',
+    [id_mes, inicio, fin, parseFloat(efectivo_inicial) || 0, !!efectivo_inicial_confirmado]
   );
   res.status(200).json({ msg: "Periodo registrado satisfactoriamente", id: result.insertId });
 }));
 
 router.put('/editar_periodo/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { fecha_inicio, fecha_fin, efectivo_inicial } = req.body;
+  const { fecha_inicio, fecha_fin, efectivo_inicial, efectivo_inicial_confirmado } = req.body;
   const fields = [];
   const values = [];
   if (fecha_inicio !== undefined) { fields.push('fecha_inicio = ?'); values.push(fecha_inicio); }
   if (fecha_fin !== undefined) { fields.push('fecha_fin = ?'); values.push(fecha_fin); }
   if (efectivo_inicial !== undefined) { fields.push('efectivo_inicial = ?'); values.push(parseFloat(efectivo_inicial) || 0); }
+  if (efectivo_inicial_confirmado !== undefined) { fields.push('efectivo_inicial_confirmado = ?'); values.push(!!efectivo_inicial_confirmado); }
   if (fields.length === 0) {
     throw new AppError(400, 'No hay campos para actualizar', 'VALIDATION_ERROR');
   }
@@ -63,7 +64,7 @@ router.delete('/borrar_periodo/:id', asyncHandler(async (req, res) => {
 router.delete('/limpiar-periodo/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
   await db.query('DELETE FROM Movimiento WHERE Periodo_id = ?', [id]);
-  await db.query('UPDATE Periodo SET efectivo_inicial = 0 WHERE id = ?', [id]);
+  await db.query('UPDATE Periodo SET efectivo_inicial = 0, efectivo_inicial_confirmado = 0 WHERE id = ?', [id]);
   res.json({ msg: 'Periodo limpiado satisfactoriamente' });
 }));
 

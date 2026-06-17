@@ -5,6 +5,7 @@ import { api } from '../api/client';
 import ProgressBars from '../components/ProgressBars';
 import MovimientoForm from '../components/MovimientoForm';
 import TransaccionForm from '../components/TransaccionForm';
+import EfectivoInicialPrompt from '../components/EfectivoInicialPrompt';
 
 export default function Dashboard() {
   const { usuario } = useAuth();
@@ -41,6 +42,7 @@ export default function Dashboard() {
 
   const { mes, periodos } = data || {};
   const periodoActual = periodos?.find((p) => p.id === selectedPeriodo) || periodos?.[0];
+  const efectivoResuelto = !!periodoActual?.efectivo_inicial_confirmado;
 
   useEffect(() => {
     setMovements(periodoActual?.movimientos || []);
@@ -119,12 +121,16 @@ export default function Dashboard() {
     }
   };
 
+  const refreshDashboard = async () => {
+    const d = await api.getDashboard(usuario.id);
+    setData(d);
+  };
+
   const handleEfectivoSave = async () => {
     try {
-      await api.editarPeriodo(periodoActual.id, { efectivo_inicial: parseFloat(efectivoInput) || 0 });
+      await api.editarPeriodo(periodoActual.id, { efectivo_inicial: parseFloat(efectivoInput) || 0, efectivo_inicial_confirmado: true });
       setEditEfectivo(false);
-      const d = await api.getDashboard(usuario.id);
-      setData(d);
+      await refreshDashboard();
     } catch (err) {
       alert(err.message);
     }
@@ -135,8 +141,7 @@ export default function Dashboard() {
     try {
       await api.limpiarPeriodo(periodoActual.id);
       setShowConfigModal(false);
-      const d = await api.getDashboard(usuario.id);
-      setData(d);
+      await refreshDashboard();
     } catch (err) {
       alert(err.message);
     }
@@ -149,9 +154,12 @@ export default function Dashboard() {
   };
 
   const periodoData = useMemo(() => {
-    const totalIngresos = movements
-      .filter((m) => m.tipo === 'Ingreso')
-      .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0);
+    const efectivoInicial = parseFloat(periodoActual?.efectivo_inicial || 0);
+    const totalIngresos =
+      movements
+        .filter((m) => m.tipo === 'Ingreso')
+        .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0)
+      + efectivoInicial;
     const totalGastos = movements
       .filter((m) => m.tipo === 'Gasto')
       .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0);
@@ -184,9 +192,8 @@ export default function Dashboard() {
     const noCashGastos = movements
       .filter((m) => m.tipo === 'Gasto' && !m.es_efectivo)
       .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0);
-    let efectivoRestante =
-      parseFloat(periodoActual?.efectivo_inicial || 0) - cashGastos;
-    let tarjetaRestante = totalIngresos - noCashGastos;
+    let efectivoRestante = efectivoInicial - cashGastos;
+    let tarjetaRestante = (totalIngresos - efectivoInicial) - noCashGastos;
 
     for (const t of transacciones) {
       const monto = parseFloat(t.monto) || 0;
@@ -199,6 +206,13 @@ export default function Dashboard() {
       }
     }
 
+    const totalGastosFijos = movements
+      .filter((m) => m.tipo === 'Gasto' && m.isFijo)
+      .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0);
+    const totalGastosDinamicos = movements
+      .filter((m) => m.tipo === 'Gasto' && !m.isFijo)
+      .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0);
+
     return {
       totalIngresos,
       totalGastos,
@@ -206,6 +220,8 @@ export default function Dashboard() {
       porMetodo,
       efectivoRestante,
       tarjetaRestante,
+      totalGastosFijos,
+      totalGastosDinamicos,
     };
   }, [movements, periodoActual, transacciones]);
 
@@ -216,6 +232,8 @@ export default function Dashboard() {
     porMetodo,
     efectivoRestante,
     tarjetaRestante,
+    totalGastosFijos,
+    totalGastosDinamicos,
   } = periodoData;
 
   if (loading) {
@@ -271,6 +289,10 @@ export default function Dashboard() {
           </div>
       </div>
 
+      {periodoActual && !efectivoResuelto && (
+        <EfectivoInicialPrompt periodo={periodoActual} onResolved={refreshDashboard} />
+      )}
+
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
         <div className="bg-white rounded-lg shadow p-4 lg:p-6">
           <h3 className="text-gray-500 text-sm font-medium">Ingresos</h3>
@@ -307,7 +329,51 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-bold text-gray-800 mb-4">Distribución del Presupuesto</h2>
-          <ProgressBars mes={mes} />
+          <ProgressBars mes={mes} totalIngresos={totalIngresos} />
+          {mes && (
+            <>
+              <hr className="my-4 border-gray-200" />
+              <h3 className="text-sm font-semibold text-gray-600 mb-3">Uso por categoría</h3>
+              <div className="space-y-4">
+                {[
+                  {
+                    label: 'Gastos Fijos',
+                    asignado: (mes.porcentajeGastos / 100) * totalIngresos,
+                    gastado: totalGastosFijos,
+                    barColor: 'bg-red-500',
+                    textColor: 'text-red-600',
+                  },
+                  {
+                    label: 'Gustos',
+                    asignado: (mes.porcentajeGustos / 100) * totalIngresos,
+                    gastado: totalGastosDinamicos,
+                    barColor: 'bg-yellow-500',
+                    textColor: 'text-yellow-600',
+                  },
+                ].map(({ label, asignado, gastado, barColor, textColor }) => {
+                  const restante = asignado - gastado;
+                  const pctUsado = asignado > 0 ? Math.min((gastado / asignado) * 100, 100) : 0;
+                  return (
+                    <div key={label}>
+                      <div className="flex justify-between items-baseline mb-1">
+                        <span className={`text-sm font-medium ${textColor}`}>{label}</span>
+                        <span className="text-xs text-gray-400">de RD$ {asignado.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-gray-500">Gastado: <span className="font-medium text-gray-700">RD$ {gastado.toFixed(2)}</span></span>
+                        <span className={`font-semibold ${restante >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          Restante: RD$ {restante.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className={`${barColor} h-2 rounded-full`} style={{ width: `${pctUsado}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
@@ -341,7 +407,7 @@ export default function Dashboard() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-bold text-gray-800">Movimientos</h2>
           <div className="flex items-center gap-3">
-            {!showForm && (
+            {!showForm && efectivoResuelto && (
               <button
                 onClick={() => { setEditingMov(null); setShowForm(true); }}
                 className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm"
@@ -382,23 +448,36 @@ export default function Dashboard() {
           <p className="text-gray-500 text-sm">No hay movimientos en este periodo.</p>
         ) : null}
 
-        {!showForm && movements.length > 0 && (
+        {!showForm && (movements.length > 0 || parseFloat(periodoActual?.efectivo_inicial || 0) > 0) && (
           <>
             {(() => {
               const ingresos = movements.filter((m) => m.tipo === 'Ingreso');
               const gastosFijos = movements.filter((m) => m.tipo === 'Gasto' && m.isFijo);
               const gastosDinamicos = movements.filter((m) => m.tipo === 'Gasto' && !m.isFijo);
+              const efectivoInicial = parseFloat(periodoActual?.efectivo_inicial || 0);
               return (
                 <>
-                  {ingresos.length > 0 && (
+                  {(ingresos.length > 0 || efectivoInicial > 0) && (
                     <div>
                       <h3 className="text-md font-bold text-green-700 mb-2">
                         Ingresos
                         <span className="text-sm font-normal text-gray-500 ml-2">
-                          (RD$ {ingresos.reduce((s, m) => s + parseFloat(m.totalRD || 0), 0).toFixed(2)})
+                          (RD$ {(ingresos.reduce((s, m) => s + parseFloat(m.totalRD || 0), 0) + efectivoInicial).toFixed(2)})
                         </span>
                       </h3>
                       <div className="space-y-2">
+                        {efectivoInicial > 0 && (
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-white border border-green-200 rounded-lg p-3">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <span className="inline-block w-2 h-2 rounded-full shrink-0 bg-green-500" />
+                              <span className="font-medium text-gray-800">Efectivo Inicial</span>
+                              <span className="text-sm text-gray-500 shrink-0">Efectivo</span>
+                            </div>
+                            <span className="font-medium text-green-600 text-right">
+                              RD$ {efectivoInicial.toFixed(2)}
+                            </span>
+                          </div>
+                        )}
                         {ingresos.map((mov) => (
                           <div
                             key={mov.id}
@@ -438,7 +517,9 @@ export default function Dashboard() {
                     <div>
                       <h3 className="text-md font-bold text-red-700 mb-2">Gastos Fijos</h3>
                       <div className="space-y-2">
-                        {gastosFijos.map((mov) => (
+                        {gastosFijos.map((mov) => {
+                          const esCashback = parseFloat(mov.totalRD) < 0;
+                          return (
                           <div
                             key={mov.id}
                             className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-white border border-gray-200 rounded-lg p-3"
@@ -450,16 +531,19 @@ export default function Dashboard() {
                                 onChange={() => handleTogglePagado(mov.id, mov.pagado)}
                                 className="h-4 w-4 shrink-0"
                               />
-                              <span className="inline-block w-2 h-2 rounded-full shrink-0 bg-red-500" />
+                              <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${esCashback ? 'bg-green-500' : 'bg-red-500'}`} />
                               <span className="font-medium text-gray-800 truncate">{mov.descripcion}</span>
                               <span className="text-sm text-gray-500 shrink-0">
                                 {mov.metodo_pago}
                               </span>
                             </div>
                             <div className="flex items-center justify-end gap-3 shrink-0 sm:ml-3">
-                              <span className="font-medium text-red-600">
-                                RD$ {parseFloat(mov.totalRD).toFixed(2)}
+                              <span className={`font-medium ${esCashback ? 'text-green-600' : 'text-red-600'}`}>
+                                {esCashback ? '+' : ''}RD$ {Math.abs(parseFloat(mov.totalRD)).toFixed(2)}
                               </span>
+                              {esCashback && (
+                                <span className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700">Cashback</span>
+                              )}
                               <span
                                 className={`text-xs px-2 py-0.5 rounded ${
                                   mov.pagado
@@ -483,7 +567,8 @@ export default function Dashboard() {
                               </button>
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -492,7 +577,9 @@ export default function Dashboard() {
                     <div>
                       <h3 className="text-md font-bold text-orange-700 mb-2">Gastos Dinámicos</h3>
                       <div className="space-y-2">
-                        {gastosDinamicos.map((mov) => (
+                        {gastosDinamicos.map((mov) => {
+                          const esCashback = parseFloat(mov.totalRD) < 0;
+                          return (
                           <div
                             key={mov.id}
                             className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-white border border-gray-200 rounded-lg p-3"
@@ -504,16 +591,19 @@ export default function Dashboard() {
                                 onChange={() => handleTogglePagado(mov.id, mov.pagado)}
                                 className="h-4 w-4 shrink-0"
                               />
-                              <span className="inline-block w-2 h-2 rounded-full shrink-0 bg-red-500" />
+                              <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${esCashback ? 'bg-green-500' : 'bg-red-500'}`} />
                               <span className="font-medium text-gray-800 truncate">{mov.descripcion}</span>
                               <span className="text-sm text-gray-500 shrink-0">
                                 {mov.metodo_pago}
                               </span>
                             </div>
                             <div className="flex items-center justify-end gap-3 shrink-0 sm:ml-3">
-                              <span className="font-medium text-red-600">
-                                RD$ {parseFloat(mov.totalRD).toFixed(2)}
+                              <span className={`font-medium ${esCashback ? 'text-green-600' : 'text-red-600'}`}>
+                                {esCashback ? '+' : ''}RD$ {Math.abs(parseFloat(mov.totalRD)).toFixed(2)}
                               </span>
+                              {esCashback && (
+                                <span className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700">Cashback</span>
+                              )}
                               <span
                                 className={`text-xs px-2 py-0.5 rounded ${
                                   mov.pagado
@@ -537,7 +627,8 @@ export default function Dashboard() {
                               </button>
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -636,7 +727,7 @@ export default function Dashboard() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-bold text-gray-800">Depósitos y Retiros</h2>
           <div className="flex items-center gap-3">
-            {!showTransForm && (
+            {!showTransForm && efectivoResuelto && (
               <button
                 onClick={() => { setEditingTrans(null); setShowTransForm(true); }}
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm"
