@@ -1,44 +1,35 @@
-export default function ProgressBars({ mes }) {
+export default function ProgressBars({ mes, totalIngresos }) {
   if (!mes) return null;
 
+  const monto = (pct) =>
+    totalIngresos != null
+      ? `RD$ ${((pct / 100) * totalIngresos).toFixed(2)}`
+      : null;
+
+  const bars = [
+    { label: 'Gastos',  pct: mes.porcentajeGastos,  color: 'text-red-600',    bar: 'bg-red-500' },
+    { label: 'Gustos',  pct: mes.porcentajeGustos,  color: 'text-yellow-600', bar: 'bg-yellow-500' },
+    { label: 'Ahorros', pct: mes.porcentajeAhorros, color: 'text-green-600',  bar: 'bg-green-500' },
+  ];
+
   return (
-    <div className="space-y-3">
-      <div>
-        <div className="flex justify-between text-sm mb-1">
-          <span className="text-red-600 font-medium">Gastos</span>
-          <span className="text-gray-600">{mes.porcentajeGastos}% del presupuesto</span>
+    <div className="space-y-4">
+      {bars.map(({ label, pct, color, bar }) => (
+        <div key={label}>
+          <div className="flex justify-between items-start mb-1">
+            <span className={`text-sm font-medium ${color}`}>{label}</span>
+            <div className="text-right">
+              {monto(pct) && (
+                <p className={`text-base font-bold ${color}`}>{monto(pct)}</p>
+              )}
+              <p className="text-xs text-gray-500">{pct}% del presupuesto</p>
+            </div>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-3">
+            <div className={`${bar} h-3 rounded-full`} style={{ width: `${pct}%` }}></div>
+          </div>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
-          <div
-            className="bg-red-500 h-3 rounded-full"
-            style={{ width: `${mes.porcentajeGastos}%` }}
-          ></div>
-        </div>
-      </div>
-      <div>
-        <div className="flex justify-between text-sm mb-1">
-          <span className="text-yellow-600 font-medium">Gustos</span>
-          <span className="text-gray-600">{mes.porcentajeGustos}% del presupuesto</span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
-          <div
-            className="bg-yellow-500 h-3 rounded-full"
-            style={{ width: `${mes.porcentajeGustos}%` }}
-          ></div>
-        </div>
-      </div>
-      <div>
-        <div className="flex justify-between text-sm mb-1">
-          <span className="text-green-600 font-medium">Ahorros</span>
-          <span className="text-gray-600">{mes.porcentajeAhorros}% del presupuesto</span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
-          <div
-            className="bg-green-500 h-3 rounded-full"
-            style={{ width: `${mes.porcentajeAhorros}%` }}
-          ></div>
-        </div>
-      </div>
+      ))}
     </div>
   );
 }

@@ -22,6 +22,15 @@ router.post('/nueva-transaccion-efectivo', asyncHandler(async (req, res) => {
   if (!['deposito', 'retiro'].includes(tipo)) {
     throw new AppError(400, 'tipo debe ser deposito o retiro', 'VALIDATION_ERROR');
   }
+
+  const [periodoRows] = await db.query('SELECT efectivo_inicial_confirmado FROM Periodo WHERE id = ?', [periodo_id]);
+  if (periodoRows.length === 0) {
+    throw new AppError(404, 'Periodo no encontrado', 'NOT_FOUND');
+  }
+  if (!periodoRows[0].efectivo_inicial_confirmado) {
+    throw new AppError(400, 'Debes definir el efectivo inicial de este periodo antes de registrar movimientos.', 'PERIODO_NO_RESUELTO');
+  }
+
   const [result] = await db.query(
     `INSERT INTO TransaccionEfectivo (periodo_id, tipo, monto, descripcion, fecha)
      VALUES (?, ?, ?, ?, ?)`,

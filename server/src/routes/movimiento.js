@@ -34,6 +34,15 @@ router.get('/movimiento/:id_periodo', asyncHandler(async (req, res) => {
 
 router.post('/nuevo_movimiento', asyncHandler(async (req, res) => {
   const { tipoMovimiento_id, periodo_id, metodo_id, descripcion, isFijo, monto_usd, monto_rd, fecha_pago, pagado } = req.body;
+
+  const [periodoRows] = await db.query('SELECT efectivo_inicial_confirmado FROM Periodo WHERE id = ?', [periodo_id]);
+  if (periodoRows.length === 0) {
+    throw new AppError(404, 'Periodo no encontrado', 'NOT_FOUND');
+  }
+  if (!periodoRows[0].efectivo_inicial_confirmado) {
+    throw new AppError(400, 'Debes definir el efectivo inicial de este periodo antes de registrar movimientos.', 'PERIODO_NO_RESUELTO');
+  }
+
   const [result] = await db.query(
     `INSERT INTO Movimiento (tipoMovimiento_id, periodo_id, metodo_id, descripcion, isFijo, monto_usd, monto_rd, fecha_pago, pagado)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
