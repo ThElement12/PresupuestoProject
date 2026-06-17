@@ -30,7 +30,10 @@ export default function Layout({ children }) {
                   Nuevo Mes
                 </Link>
                 <Link to="/metodos" className="text-gray-600 hover:text-gray-900">
-                  Métodos
+                  Formas de Pago
+                </Link>
+                <Link to="/ayuda" className="text-gray-600 hover:text-gray-900">
+                  Ayuda
                 </Link>
                 {usuario?.rol === 'admin' && (
                   <Link to="/admin" className="text-gray-600 hover:text-gray-900">
@@ -87,7 +90,14 @@ export default function Layout({ children }) {
               onClick={() => setMenuOpen(false)}
               className="block py-2 text-gray-600 hover:text-gray-900"
             >
-              Métodos
+              Formas de Pago
+            </Link>
+            <Link
+              to="/ayuda"
+              onClick={() => setMenuOpen(false)}
+              className="block py-2 text-gray-600 hover:text-gray-900"
+            >
+              Ayuda
             </Link>
             {usuario?.rol === 'admin' && (
               <Link

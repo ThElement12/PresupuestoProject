@@ -24,7 +24,7 @@ export default function EfectivoInicialPrompt({ periodo, onResolved }) {
 
   return (
     <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4 sm:p-6 space-y-3">
-      <h2 className="text-lg font-bold text-gray-800">Efectivo Inicial del Periodo</h2>
+      <h2 className="text-lg font-bold text-gray-800">¿Cuánto efectivo tienes en mano al inicio de este periodo?</h2>
       <p className="text-sm text-gray-600">
         Antes de registrar movimientos o depósitos/retiros en este periodo, indica con cuánto
         efectivo inicia. Si no aplica, puedes colocar 0 u omitir este paso.
@@ -32,7 +32,7 @@ export default function EfectivoInicialPrompt({ periodo, onResolved }) {
       <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2 sm:items-end">
         <div className="flex-1">
           <label className="block text-gray-700 text-sm font-medium mb-1">
-            Efectivo Inicial (RD$)
+            Efectivo en mano (RD$)
           </label>
           <input
             type="number"

@@ -16,7 +16,7 @@ export default function Metodos() {
   useEffect(() => { loadMetodos(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDelete = async (id) => {
-    if (!confirm('¿Borrar este método de pago?')) return;
+    if (!confirm('¿Borrar esta forma de pago?')) return;
     try {
       await api.borrarMetodo(id);
       loadMetodos();
@@ -40,7 +40,7 @@ export default function Metodos() {
   return (
     <div className="max-w-lg mx-auto">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Métodos de Pago</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Formas de Pago</h1>
         <Link
           to="/metodo/nuevo"
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm"
@@ -51,7 +51,7 @@ export default function Metodos() {
 
       {metodos.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
-          No tienes métodos de pago registrados.
+          No tienes formas de pago registradas.
         </div>
       ) : (
         <div className="space-y-2">

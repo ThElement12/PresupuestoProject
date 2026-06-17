@@ -19,10 +19,14 @@ export default function Login() {
       login(data.usuario, rememberMe);
       navigate('/dashboard');
     } catch (err) {
-      if (err.errorCode === 'USER_NOT_FOUND' || err.errorCode === 'INVALID_PASSWORD') {
+      if (
+        err.errorCode === 'USER_NOT_FOUND' ||
+        err.errorCode === 'INVALID_PASSWORD' ||
+        err.status === 401
+      ) {
         setError('Credenciales incorrectas');
       } else {
-        setError('Error del servidor');
+        setError(err.message || 'Error del servidor');
       }
     }
   };

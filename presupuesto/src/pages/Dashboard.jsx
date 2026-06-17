@@ -176,7 +176,7 @@ export default function Dashboard() {
   };
 
   const handleLimpiarPeriodo = async () => {
-    if (!confirm('¿Limpiar este periodo? Se borrarán todos los movimientos y se reseteará el efectivo inicial a 0.')) return;
+    if (!confirm('¿Reiniciar este periodo? Se borrarán todos los movimientos y el efectivo en mano volverá a 0.')) return;
     try {
       await api.limpiarPeriodo(periodoActual.id);
       setShowConfigModal(false);
@@ -302,7 +302,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
           <p className="text-gray-500 capitalize">
-            Periodicidad: {mes.periodicidad} | {periodos.length} periodo{periodos.length !== 1 ? 's' : ''}
+            Frecuencia: {mes.periodicidad} | {periodos.length} periodo{periodos.length !== 1 ? 's' : ''}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -430,7 +430,7 @@ export default function Dashboard() {
                     textColor: 'text-red-600',
                   },
                   {
-                    label: 'Gustos',
+                    label: 'Gastos Variables',
                     asignado: (mes.porcentajeGustos / 100) * totalIngresos,
                     gastado: totalGastosDinamicos,
                     barColor: 'bg-yellow-500',
@@ -463,7 +463,7 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">Gastos por Método de Pago</h2>
+          <h2 className="text-lg font-bold text-gray-800 mb-4">Gastos por Forma de Pago</h2>
           {porMetodo.length === 0 ? (
             <p className="text-gray-500 text-sm">No hay gastos registrados.</p>
           ) : (
@@ -505,7 +505,7 @@ export default function Dashboard() {
               onClick={openConfigModal}
               className="text-gray-500 hover:text-gray-700 text-sm font-medium"
             >
-              Config
+              Ajustar periodo
             </button>
           </div>
         </div>
@@ -556,7 +556,7 @@ export default function Dashboard() {
                           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-white border border-green-200 rounded-lg p-3">
                             <div className="flex items-center gap-3 min-w-0">
                               <span className="inline-block w-2 h-2 rounded-full shrink-0 bg-green-500" />
-                              <span className="font-medium text-gray-800">Efectivo Inicial</span>
+                              <span className="font-medium text-gray-800">Saldo inicial en efectivo</span>
                               <span className="text-sm text-gray-500 shrink-0">Efectivo</span>
                             </div>
                             <span className="font-medium text-green-600 text-right">
@@ -661,7 +661,7 @@ export default function Dashboard() {
 
                   {gastosDinamicos.length > 0 && (
                     <div>
-                      <h3 className="text-md font-bold text-orange-700 mb-2">Gastos Dinámicos</h3>
+                      <h3 className="text-md font-bold text-orange-700 mb-2">Gastos Variables</h3>
                       <div className="space-y-2">
                         {gastosDinamicos.map((mov) => {
                           const esCashback = parseFloat(mov.totalRD) < 0;
@@ -738,7 +738,7 @@ export default function Dashboard() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-lg font-bold text-gray-800">Configuración del Periodo</h2>
+                <h2 className="text-lg font-bold text-gray-800">Ajustar Periodo</h2>
                 <button
                   onClick={() => setShowConfigModal(false)}
                   className="text-gray-400 hover:text-gray-600 text-xl leading-none"
@@ -753,7 +753,7 @@ export default function Dashboard() {
                 </div>
 
                 <div>
-                  <h3 className="text-gray-500 text-sm font-medium mb-2">Efectivo Inicial</h3>
+                  <h3 className="text-gray-500 text-sm font-medium mb-2">Efectivo en mano al inicio</h3>
                   {editEfectivo ? (
                     <div className="flex items-center gap-2">
                       <input
@@ -800,7 +800,7 @@ export default function Dashboard() {
                     onClick={handleLimpiarPeriodo}
                     className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 text-sm"
                   >
-                    Limpiar Periodo
+                    Reiniciar Periodo
                   </button>
                 </div>
               </div>
