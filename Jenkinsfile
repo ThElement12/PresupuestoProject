@@ -31,7 +31,7 @@ pipeline {
                 script {
                     def envConfig = [
                         production: [backendPort: '5003', frontendPort: '6969', dbSuffix: '',        viteApiUrl: '',                         pushLatest: 'true'],
-                        staging:    [backendPort: '5004', frontendPort: '6971', dbSuffix: '_staging', viteApiUrl: "http://${IP_UNRAID}:5004", pushLatest: 'false'],
+                        staging:    [backendPort: '5004', frontendPort: '6971', dbSuffix: '_staging', viteApiUrl: '',                         pushLatest: 'false'],
                         main:       [backendPort: '5005', frontendPort: '6970', dbSuffix: '_dev',     viteApiUrl: "http://${IP_UNRAID}:5005", pushLatest: 'false'],
                     ]
                     def cfg = envConfig[env.BRANCH_NAME]

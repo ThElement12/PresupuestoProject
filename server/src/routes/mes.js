@@ -72,7 +72,14 @@ async function propagateFixedMovements(newMesId, periodoIndex, usuarioId, newPer
 
 router.get('/mes-usuario/:IdUsuario', asyncHandler(async (req, res) => {
   const { IdUsuario } = req.params;
-  const [rows] = await db.query('SELECT * FROM Mes WHERE usuario_id = ?', [IdUsuario]);
+  const [rows] = await db.query(
+    `SELECT m.*, MIN(p.fecha_inicio) AS fecha_inicio
+     FROM Mes m
+     LEFT JOIN Periodo p ON p.mes_id = m.id
+     WHERE m.usuario_id = ?
+     GROUP BY m.id`,
+    [IdUsuario]
+  );
   res.json(rows);
 }));
 

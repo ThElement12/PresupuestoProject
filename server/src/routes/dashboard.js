@@ -12,11 +12,11 @@ async function totalEnRD(monto_usd, monto_rd) {
 
 router.get('/dashboard/:usuario_id', asyncHandler(async (req, res) => {
   const { usuario_id } = req.params;
+  const { mes_id } = req.query;
 
-  const [meses] = await db.query(
-    'SELECT * FROM Mes WHERE usuario_id = ? ORDER BY id DESC LIMIT 1',
-    [usuario_id]
-  );
+  const [meses] = mes_id
+    ? await db.query('SELECT * FROM Mes WHERE id = ? AND usuario_id = ?', [mes_id, usuario_id])
+    : await db.query('SELECT * FROM Mes WHERE usuario_id = ? ORDER BY id DESC LIMIT 1', [usuario_id]);
 
   if (meses.length === 0) {
     return res.json({ mes: null, periodos: [], resumen: { totalIngresos: 0, totalGastos: 0, balance: 0 } });

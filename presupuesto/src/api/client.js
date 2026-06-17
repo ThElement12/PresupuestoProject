@@ -39,8 +39,8 @@ export const api = {
     body: JSON.stringify({ tasa_dolar }),
   }),
 
-  getDashboard: (usuarioId, periodoId) => {
-    const params = periodoId ? `?periodo_id=${periodoId}` : '';
+  getDashboard: (usuarioId, mesId) => {
+    const params = mesId ? `?mes_id=${mesId}` : '';
     return request(`/dashboard/${usuarioId}${params}`);
   },
   getMeses: (usuarioId) => request(`/mes-usuario/${usuarioId}`),
