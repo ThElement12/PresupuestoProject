@@ -1,26 +1,28 @@
-const STORAGE_KEY = 'usuario';
+const TOKEN_KEY = 'token';
+const USER_KEY = 'usuario';
 
 export function getStoredToken() {
-  return localStorage.getItem(STORAGE_KEY) ?? sessionStorage.getItem(STORAGE_KEY);
+  return localStorage.getItem(TOKEN_KEY) ?? sessionStorage.getItem(TOKEN_KEY);
 }
 
 export function getStoredUsuario() {
-  const raw = getStoredToken();
+  const raw = localStorage.getItem(USER_KEY) ?? sessionStorage.getItem(USER_KEY);
   return raw ? JSON.parse(raw) : null;
 }
 
-export function setStoredUsuario(userData, rememberMe) {
-  const raw = JSON.stringify(userData);
-  if (rememberMe) {
-    localStorage.setItem(STORAGE_KEY, raw);
-    sessionStorage.removeItem(STORAGE_KEY);
-  } else {
-    sessionStorage.setItem(STORAGE_KEY, raw);
-    localStorage.removeItem(STORAGE_KEY);
-  }
+export function setStoredAuth(token, userData, rememberMe) {
+  const storage = rememberMe ? localStorage : sessionStorage;
+  const other = rememberMe ? sessionStorage : localStorage;
+
+  storage.setItem(TOKEN_KEY, token);
+  storage.setItem(USER_KEY, JSON.stringify(userData));
+  other.removeItem(TOKEN_KEY);
+  other.removeItem(USER_KEY);
 }
 
 export function clearStoredUsuario() {
-  localStorage.removeItem(STORAGE_KEY);
-  sessionStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(USER_KEY);
 }

@@ -16,7 +16,7 @@ export default function Login() {
     setError('');
     try {
       const data = await api.login(correo, pass);
-      login(data.usuario, rememberMe);
+      login(data.token, data.usuario, rememberMe);
       navigate('/dashboard');
     } catch (err) {
       if (

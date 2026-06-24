@@ -194,43 +194,39 @@ export default function Dashboard() {
 
   const periodoData = useMemo(() => {
     const efectivoInicial = parseFloat(periodoActual?.efectivo_inicial || 0);
-    const totalIngresos =
-      movements
-        .filter((m) => m.tipo === 'Ingreso')
-        .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0)
-      + efectivoInicial;
-    const totalGastos = movements
-      .filter((m) => m.tipo === 'Gasto')
-      .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0);
-    const balance = totalIngresos - totalGastos;
-
-    const gastosNoPagados = movements.filter(
-      (m) => m.tipo === 'Gasto' && !m.pagado
-    );
+    let sumIngresos = 0;
+    let sumGastos = 0;
+    let cashGastos = 0;
+    let noCashGastos = 0;
+    let totalGastosFijos = 0;
+    let totalGastosDinamicos = 0;
     const porMetodoMap = {};
-    for (const mov of gastosNoPagados) {
-      const key = mov.metodo_id;
-      if (!porMetodoMap[key]) {
-        porMetodoMap[key] = {
-          metodo_id: mov.metodo_id,
-          metodo_pago: mov.metodo_pago,
-          es_efectivo: mov.es_efectivo,
-          total: 0,
-        };
+
+    for (const m of movements) {
+      const rd = parseFloat(m.totalRD || 0);
+      if (m.tipo === 'Ingreso') {
+        sumIngresos += rd;
+      } else {
+        sumGastos += rd;
+        if (m.es_efectivo) cashGastos += rd; else noCashGastos += rd;
+        if (m.isFijo) totalGastosFijos += rd; else totalGastosDinamicos += rd;
+        if (!m.pagado) {
+          const key = m.metodo_id;
+          if (!porMetodoMap[key]) {
+            porMetodoMap[key] = { metodo_id: m.metodo_id, metodo_pago: m.metodo_pago, es_efectivo: m.es_efectivo, total: 0 };
+          }
+          porMetodoMap[key].total += rd;
+        }
       }
-      porMetodoMap[key].total += parseFloat(mov.totalRD) || 0;
     }
+
+    const totalIngresos = sumIngresos + efectivoInicial;
+    const totalGastos = sumGastos;
     const porMetodo = Object.values(porMetodoMap).map((m) => ({
       ...m,
       porcentaje: totalGastos > 0 ? (m.total / totalGastos) * 100 : 0,
     }));
 
-    const cashGastos = movements
-      .filter((m) => m.tipo === 'Gasto' && m.es_efectivo)
-      .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0);
-    const noCashGastos = movements
-      .filter((m) => m.tipo === 'Gasto' && !m.es_efectivo)
-      .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0);
     let efectivoRestante = efectivoInicial - cashGastos;
     let tarjetaRestante = (totalIngresos - efectivoInicial) - noCashGastos;
 
@@ -245,17 +241,10 @@ export default function Dashboard() {
       }
     }
 
-    const totalGastosFijos = movements
-      .filter((m) => m.tipo === 'Gasto' && m.isFijo)
-      .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0);
-    const totalGastosDinamicos = movements
-      .filter((m) => m.tipo === 'Gasto' && !m.isFijo)
-      .reduce((s, m) => s + parseFloat(m.totalRD || 0), 0);
-
     return {
       totalIngresos,
       totalGastos,
-      balance,
+      balance: totalIngresos - totalGastos,
       porMetodo,
       efectivoRestante,
       tarjetaRestante,
@@ -274,6 +263,11 @@ export default function Dashboard() {
     totalGastosFijos,
     totalGastosDinamicos,
   } = periodoData;
+
+  const currentMesIndex = useMemo(
+    () => allMeses.findIndex((m) => m.id === selectedMesId),
+    [allMeses, selectedMesId]
+  );
 
   if (loading) {
     return <div className="text-center text-gray-500">Cargando...</div>;
@@ -309,10 +303,9 @@ export default function Dashboard() {
           <div className="flex items-center gap-1">
             <button
               onClick={() => {
-                const idx = allMeses.findIndex((m) => m.id === selectedMesId);
-                if (idx < allMeses.length - 1) setSelectedMesId(allMeses[idx + 1].id);
+                if (currentMesIndex < allMeses.length - 1) setSelectedMesId(allMeses[currentMesIndex + 1].id);
               }}
-              disabled={allMeses.findIndex((m) => m.id === selectedMesId) >= allMeses.length - 1}
+              disabled={currentMesIndex >= allMeses.length - 1}
               className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30 text-gray-600"
               title="Mes anterior"
             >
@@ -331,10 +324,9 @@ export default function Dashboard() {
             </select>
             <button
               onClick={() => {
-                const idx = allMeses.findIndex((m) => m.id === selectedMesId);
-                if (idx > 0) setSelectedMesId(allMeses[idx - 1].id);
+                if (currentMesIndex > 0) setSelectedMesId(allMeses[currentMesIndex - 1].id);
               }}
-              disabled={allMeses.findIndex((m) => m.id === selectedMesId) <= 0}
+              disabled={currentMesIndex <= 0}
               className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30 text-gray-600"
               title="Mes siguiente"
             >

@@ -1,21 +1,31 @@
 import express from "express";
 import db from "../database.js";
+import AppError from "../utils/AppError.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import verifyOwnership from "../utils/verifyOwnership.js";
 
 const router = express.Router();
 
-async function totalEnRD(monto_usd, monto_rd) {
-  const [[{ valor }]] = await db.query("SELECT valor FROM Configuracion WHERE clave = 'tasa_dolar'");
-  const tasa = parseFloat(valor) || 0;
+function totalEnRD(monto_usd, monto_rd, tasa) {
   return parseFloat(monto_rd) + parseFloat(monto_usd) * tasa;
 }
 
 router.get('/dashboard/:usuario_id', asyncHandler(async (req, res) => {
-  const { usuario_id } = req.params;
-  const { mes_id } = req.query;
+  const usuario_id = parseInt(req.params.usuario_id);
+  if (isNaN(usuario_id)) {
+    throw new AppError(400, 'usuario_id debe ser un número', 'VALIDATION_ERROR');
+  }
 
-  const [meses] = mes_id
-    ? await db.query('SELECT * FROM Mes WHERE id = ? AND usuario_id = ?', [mes_id, usuario_id])
+  await verifyOwnership('usuario', usuario_id, req.usuario.id);
+
+  const { mes_id } = req.query;
+  const parsedMesId = mes_id ? parseInt(mes_id) : null;
+  if (mes_id && isNaN(parsedMesId)) {
+    throw new AppError(400, 'mes_id debe ser un número', 'VALIDATION_ERROR');
+  }
+
+  const [meses] = parsedMesId
+    ? await db.query('SELECT * FROM Mes WHERE id = ? AND usuario_id = ?', [parsedMesId, usuario_id])
     : await db.query('SELECT * FROM Mes WHERE usuario_id = ? ORDER BY id DESC LIMIT 1', [usuario_id]);
 
   if (meses.length === 0) {
@@ -29,6 +39,38 @@ router.get('/dashboard/:usuario_id', asyncHandler(async (req, res) => {
     [mes.id]
   );
 
+  if (periodos.length === 0) {
+    return res.json({ mes, periodos: [], resumen: { totalIngresos: 0, totalGastos: 0, balance: 0 } });
+  }
+
+  const [[{ valor }]] = await db.query("SELECT valor FROM Configuracion WHERE clave = 'tasa_dolar'");
+  const tasa = parseFloat(valor) || 0;
+
+  const periodoIds = periodos.map((p) => p.id);
+
+  const [allMovimientos] = await db.query(
+    `SELECT m.*, tm.movimiento AS tipo, mt.metodo_pago, mt.es_efectivo
+     FROM Movimiento m
+     JOIN TipoMovimiento tm ON m.tipoMovimiento_id = tm.id
+     LEFT JOIN Metodo mt ON m.metodo_id = mt.id
+     WHERE m.periodo_id IN (?)`,
+    [periodoIds]
+  );
+
+  const [allTransacciones] = await db.query(
+    'SELECT * FROM TransaccionEfectivo WHERE periodo_id IN (?) ORDER BY id ASC',
+    [periodoIds]
+  );
+
+  const movsByPeriodo = {};
+  const transByPeriodo = {};
+  for (const id of periodoIds) {
+    movsByPeriodo[id] = [];
+    transByPeriodo[id] = [];
+  }
+  for (const mov of allMovimientos) movsByPeriodo[mov.periodo_id].push(mov);
+  for (const t of allTransacciones) transByPeriodo[t.periodo_id].push(t);
+
   const periodosConMovimientos = [];
   let totalIngresos = 0;
   let totalGastos = 0;
@@ -37,26 +79,15 @@ router.get('/dashboard/:usuario_id', asyncHandler(async (req, res) => {
 
   for (const periodo of periodos) {
     totalEfectivoInicial += parseFloat(periodo.efectivo_inicial) || 0;
-    const [movimientos] = await db.query(
-      `SELECT m.*, tm.movimiento AS tipo, mt.metodo_pago, mt.es_efectivo
-       FROM Movimiento m
-       JOIN TipoMovimiento tm ON m.tipoMovimiento_id = tm.id
-       LEFT JOIN Metodo mt ON m.metodo_id = mt.id
-       WHERE m.Periodo_id = ?`,
-      [periodo.id]
-    );
-
-    const [transacciones] = await db.query(
-      'SELECT * FROM TransaccionEfectivo WHERE periodo_id = ? ORDER BY id ASC',
-      [periodo.id]
-    );
+    const movimientos = movsByPeriodo[periodo.id];
+    const transacciones = transByPeriodo[periodo.id];
 
     let ingresos = parseFloat(periodo.efectivo_inicial) || 0;
     let gastos = 0;
     const movsEnriquecidos = [];
 
     for (const mov of movimientos) {
-      const total = await totalEnRD(mov.monto_usd, mov.monto_rd);
+      const total = totalEnRD(mov.monto_usd, mov.monto_rd, tasa);
       const esIngreso = mov.tipo === 'Ingreso';
 
       if (esIngreso) {

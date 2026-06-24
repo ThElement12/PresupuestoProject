@@ -2,6 +2,7 @@ import express from "express";
 import db from "../database.js";
 import AppError from "../utils/AppError.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import verifyOwnership from "../utils/verifyOwnership.js";
 
 const router = express.Router();
 
@@ -11,7 +12,13 @@ router.get('/tipo-movimiento', asyncHandler(async (req, res) => {
 }));
 
 router.get('/movimiento/:id_periodo', asyncHandler(async (req, res) => {
-  const { id_periodo } = req.params;
+  const id_periodo = parseInt(req.params.id_periodo);
+  if (isNaN(id_periodo)) {
+    throw new AppError(400, 'id_periodo debe ser un número', 'VALIDATION_ERROR');
+  }
+
+  await verifyOwnership('periodo', id_periodo, req.usuario.id);
+
   const [[{ valor }]] = await db.query("SELECT valor FROM Configuracion WHERE clave = 'tasa_dolar'");
   const tasa = parseFloat(valor) || 0;
 
@@ -35,7 +42,14 @@ router.get('/movimiento/:id_periodo', asyncHandler(async (req, res) => {
 router.post('/nuevo_movimiento', asyncHandler(async (req, res) => {
   const { tipoMovimiento_id, periodo_id, metodo_id, descripcion, isFijo, monto_usd, monto_rd, fecha_pago, pagado } = req.body;
 
-  const [periodoRows] = await db.query('SELECT efectivo_inicial_confirmado FROM Periodo WHERE id = ?', [periodo_id]);
+  const pid = parseInt(periodo_id);
+  if (isNaN(pid)) {
+    throw new AppError(400, 'periodo_id debe ser un número', 'VALIDATION_ERROR');
+  }
+
+  await verifyOwnership('periodo', pid, req.usuario.id);
+
+  const [periodoRows] = await db.query('SELECT efectivo_inicial_confirmado FROM Periodo WHERE id = ?', [pid]);
   if (periodoRows.length === 0) {
     throw new AppError(404, 'Periodo no encontrado', 'NOT_FOUND');
   }
@@ -46,13 +60,19 @@ router.post('/nuevo_movimiento', asyncHandler(async (req, res) => {
   const [result] = await db.query(
     `INSERT INTO Movimiento (tipoMovimiento_id, periodo_id, metodo_id, descripcion, isFijo, monto_usd, monto_rd, fecha_pago, pagado)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [tipoMovimiento_id, periodo_id, metodo_id || null, descripcion, isFijo, monto_usd || 0, monto_rd || 0, fecha_pago || null, pagado || false]
+    [tipoMovimiento_id, pid, metodo_id || null, descripcion, isFijo, monto_usd || 0, monto_rd || 0, fecha_pago || null, pagado || false]
   );
   res.status(200).json({ msg: "Movimiento registrado satisfactoriamente", id: result.insertId });
 }));
 
 router.put('/editar_movimiento/:id', asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    throw new AppError(400, 'id debe ser un número', 'VALIDATION_ERROR');
+  }
+
+  await verifyOwnership('movimiento', id, req.usuario.id);
+
   const { tipoMovimiento_id, periodo_id, metodo_id, descripcion, isFijo, monto_usd, monto_rd, fecha_pago, pagado } = req.body;
   const fields = [];
   const values = [];
@@ -76,7 +96,13 @@ router.put('/editar_movimiento/:id', asyncHandler(async (req, res) => {
 }));
 
 router.delete('/borrar_movimiento/:id_movimiento', asyncHandler(async (req, res) => {
-  const { id_movimiento } = req.params;
+  const id_movimiento = parseInt(req.params.id_movimiento);
+  if (isNaN(id_movimiento)) {
+    throw new AppError(400, 'id_movimiento debe ser un número', 'VALIDATION_ERROR');
+  }
+
+  await verifyOwnership('movimiento', id_movimiento, req.usuario.id);
+
   await db.query('DELETE FROM Movimiento WHERE id = ?', [id_movimiento]);
   res.status(200).json({ msg: "Movimiento borrado satisfactoriamente" });
 }));

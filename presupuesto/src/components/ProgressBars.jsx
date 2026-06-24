@@ -14,13 +14,15 @@ export default function ProgressBars({ mes, totalIngresos }) {
 
   return (
     <div className="space-y-4">
-      {bars.map(({ label, pct, color, bar }) => (
+      {bars.map(({ label, pct, color, bar }) => {
+        const val = monto(pct);
+        return (
         <div key={label}>
           <div className="flex justify-between items-start mb-1">
             <span className={`text-sm font-medium ${color}`}>{label}</span>
             <div className="text-right">
-              {monto(pct) && (
-                <p className={`text-base font-bold ${color}`}>{monto(pct)}</p>
+              {val && (
+                <p className={`text-base font-bold ${color}`}>{val}</p>
               )}
               <p className="text-xs text-gray-500">{pct}% del presupuesto</p>
             </div>
@@ -29,7 +31,8 @@ export default function ProgressBars({ mes, totalIngresos }) {
             <div className={`${bar} h-3 rounded-full`} style={{ width: `${pct}%` }}></div>
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

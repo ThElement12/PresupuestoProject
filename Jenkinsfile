@@ -30,9 +30,9 @@ pipeline {
             steps {
                 script {
                     def envConfig = [
-                        production: [backendPort: '5003', frontendPort: '6969', dbSuffix: '',        viteApiUrl: '',                         pushLatest: 'true'],
-                        staging:    [backendPort: '5004', frontendPort: '6971', dbSuffix: '_staging', viteApiUrl: '',                         pushLatest: 'false'],
-                        main:       [backendPort: '5005', frontendPort: '6970', dbSuffix: '_dev',     viteApiUrl: "http://${IP_UNRAID}:5005", pushLatest: 'false'],
+                        production: [backendPort: '5003', frontendPort: '6969', dbSuffix: '',        viteApiUrl: '',                         pushLatest: 'true',  corsOrigin: "http://${IP_UNRAID}:6969"],
+                        staging:    [backendPort: '5004', frontendPort: '6971', dbSuffix: '_staging', viteApiUrl: '',                         pushLatest: 'false', corsOrigin: "http://${IP_UNRAID}:6971"],
+                        main:       [backendPort: '5005', frontendPort: '6970', dbSuffix: '_dev',     viteApiUrl: "http://${IP_UNRAID}:5005", pushLatest: 'false', corsOrigin: "http://${IP_UNRAID}:6970"],
                     ]
                     def cfg = envConfig[env.BRANCH_NAME]
 
@@ -43,6 +43,7 @@ pipeline {
                     env.DB_NAME       = "presupuesto_mensual${cfg.dbSuffix}"
                     env.VITE_API_URL  = cfg.viteApiUrl
                     env.PUSH_LATEST   = cfg.pushLatest
+                    env.CORS_ORIGIN   = cfg.corsOrigin
                     env.NETWORK_NAME  = "presupuesto-net-${env.BRANCH_TAG}"
 
                     echo "[CONFIG] branch=${env.BRANCH_NAME} backend=${env.BACKEND_PORT} frontend=${env.FRONTEND_PORT} db=${env.DB_NAME} viteApiUrl='${env.VITE_API_URL}' network=${env.NETWORK_NAME} pushLatest=${env.PUSH_LATEST}"
@@ -155,7 +156,10 @@ pipeline {
                 }
             }
             steps {
-                withCredentials([usernamePassword(credentialsId: 'unraid-db-creds', usernameVariable: 'DB_ADMIN_USER', passwordVariable: 'DB_ADMIN_PASS')]) {
+                withCredentials([
+                    usernamePassword(credentialsId: 'unraid-db-creds', usernameVariable: 'DB_ADMIN_USER', passwordVariable: 'DB_ADMIN_PASS'),
+                    string(credentialsId: 'jwt-secret', variable: 'JWT_SECRET')
+                ]) {
                     sh '''
                         docker pull $BACKEND_IMAGE:$BRANCH_TAG
                         docker pull $FRONTEND_IMAGE:$BRANCH_TAG
@@ -178,6 +182,8 @@ pipeline {
                             -e DB_PASS=$DB_ADMIN_PASS \
                             -e DB_NAME=$DB_NAME \
                             -e PORT=5000 \
+                            -e JWT_SECRET=$JWT_SECRET \
+                            -e CORS_ORIGIN=$CORS_ORIGIN \
                             $BACKEND_IMAGE:$BRANCH_TAG
 
                         docker run -d --name presupuesto-frontend-$BRANCH_TAG \

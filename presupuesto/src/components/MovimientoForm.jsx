@@ -24,6 +24,8 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
     if (initial) {
       const day = initial.fecha_pago ? String(new Date(initial.fecha_pago + 'T00:00:00').getDate()) : '';
       setForm({ ...initial, diaCobro: day });
+    } else {
+      setForm(emptyForm);
     }
   }, [initial]);
 
