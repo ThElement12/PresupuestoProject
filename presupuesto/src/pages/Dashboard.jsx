@@ -646,7 +646,7 @@ export default function Dashboard() {
                               </span>
                               {diaPago && (
                                 <span className="text-xs text-blue-600 shrink-0">
-                                  Día {diaPago}
+                                  Cobro el día {diaPago} de c/mes
                                 </span>
                               )}
                             </div>
