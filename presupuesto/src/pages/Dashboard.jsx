@@ -566,9 +566,16 @@ export default function Dashboard() {
                               </span>
                             </div>
                             <div className="flex items-center justify-end gap-3 shrink-0 sm:ml-3">
-                              <span className="font-medium text-green-600">
-                                RD$ {parseFloat(mov.totalRD).toFixed(2)}
-                              </span>
+                              <div className="text-right">
+                                <span className="font-medium text-green-600">
+                                  RD$ {parseFloat(mov.totalRD).toFixed(2)}
+                                </span>
+                                {parseFloat(mov.monto_usd) > 0 && (
+                                  <span className="block text-xs text-gray-400">
+                                    US$ {parseFloat(mov.monto_usd).toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
                               <button
                                 onClick={() => handleEdit(mov)}
                                 className="text-blue-600 hover:text-blue-800 text-sm py-1"
@@ -594,39 +601,56 @@ export default function Dashboard() {
                       <div className="space-y-2">
                         {gastosFijos.map((mov) => {
                           const esCashback = parseFloat(mov.totalRD) < 0;
+                          const diaPago = mov.fecha_pago ? new Date(mov.fecha_pago + 'T00:00:00').getDate() : null;
                           return (
                           <div
                             key={mov.id}
                             className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-white border border-gray-200 rounded-lg p-3"
                           >
                             <div className="flex items-center gap-3 min-w-0">
-                              <input
-                                type="checkbox"
-                                checked={!!mov.pagado}
-                                onChange={() => handleTogglePagado(mov.id, mov.pagado)}
-                                className="h-4 w-4 shrink-0"
-                              />
+                              {mov.es_efectivo ? (
+                                <span className="inline-block w-4 h-4 shrink-0" />
+                              ) : (
+                                <input
+                                  type="checkbox"
+                                  checked={!!mov.pagado}
+                                  onChange={() => handleTogglePagado(mov.id, mov.pagado)}
+                                  className="h-4 w-4 shrink-0"
+                                />
+                              )}
                               <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${esCashback ? 'bg-green-500' : 'bg-red-500'}`} />
                               <span className="font-medium text-gray-800 truncate">{mov.descripcion}</span>
                               <span className="text-sm text-gray-500 shrink-0">
                                 {mov.metodo_pago}
                               </span>
+                              {diaPago && (
+                                <span className="text-xs text-blue-600 shrink-0">
+                                  Día {diaPago}
+                                </span>
+                              )}
                             </div>
                             <div className="flex items-center justify-end gap-3 shrink-0 sm:ml-3">
-                              <span className={`font-medium ${esCashback ? 'text-green-600' : 'text-red-600'}`}>
-                                {esCashback ? '+' : ''}RD$ {Math.abs(parseFloat(mov.totalRD)).toFixed(2)}
-                              </span>
+                              <div className="text-right">
+                                <span className={`font-medium ${esCashback ? 'text-green-600' : 'text-red-600'}`}>
+                                  {esCashback ? '+' : ''}RD$ {Math.abs(parseFloat(mov.totalRD)).toFixed(2)}
+                                </span>
+                                {parseFloat(mov.monto_usd) > 0 && (
+                                  <span className="block text-xs text-gray-400">
+                                    US$ {parseFloat(mov.monto_usd).toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
                               {esCashback && (
                                 <span className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700">Cashback</span>
                               )}
                               <span
                                 className={`text-xs px-2 py-0.5 rounded ${
-                                  mov.pagado
+                                  mov.pagado || mov.es_efectivo
                                     ? 'bg-green-100 text-green-700'
                                     : 'bg-yellow-100 text-yellow-700'
                                 }`}
                               >
-                                {mov.pagado ? 'Pagado' : 'Pendiente'}
+                                {mov.pagado || mov.es_efectivo ? 'Pagado' : 'Pendiente'}
                               </span>
                               <button
                                 onClick={() => handleEdit(mov)}
@@ -654,39 +678,58 @@ export default function Dashboard() {
                       <div className="space-y-2">
                         {gastosDinamicos.map((mov) => {
                           const esCashback = parseFloat(mov.totalRD) < 0;
+                          const fechaRegistro = mov.created_at
+                            ? new Date(mov.created_at).toLocaleDateString('es-DO', { day: 'numeric', month: 'short' })
+                            : null;
                           return (
                           <div
                             key={mov.id}
                             className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-white border border-gray-200 rounded-lg p-3"
                           >
                             <div className="flex items-center gap-3 min-w-0">
-                              <input
-                                type="checkbox"
-                                checked={!!mov.pagado}
-                                onChange={() => handleTogglePagado(mov.id, mov.pagado)}
-                                className="h-4 w-4 shrink-0"
-                              />
+                              {mov.es_efectivo ? (
+                                <span className="inline-block w-4 h-4 shrink-0" />
+                              ) : (
+                                <input
+                                  type="checkbox"
+                                  checked={!!mov.pagado}
+                                  onChange={() => handleTogglePagado(mov.id, mov.pagado)}
+                                  className="h-4 w-4 shrink-0"
+                                />
+                              )}
                               <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${esCashback ? 'bg-green-500' : 'bg-red-500'}`} />
                               <span className="font-medium text-gray-800 truncate">{mov.descripcion}</span>
                               <span className="text-sm text-gray-500 shrink-0">
                                 {mov.metodo_pago}
                               </span>
+                              {fechaRegistro && (
+                                <span className="text-xs text-gray-400 shrink-0">
+                                  {fechaRegistro}
+                                </span>
+                              )}
                             </div>
                             <div className="flex items-center justify-end gap-3 shrink-0 sm:ml-3">
-                              <span className={`font-medium ${esCashback ? 'text-green-600' : 'text-red-600'}`}>
-                                {esCashback ? '+' : ''}RD$ {Math.abs(parseFloat(mov.totalRD)).toFixed(2)}
-                              </span>
+                              <div className="text-right">
+                                <span className={`font-medium ${esCashback ? 'text-green-600' : 'text-red-600'}`}>
+                                  {esCashback ? '+' : ''}RD$ {Math.abs(parseFloat(mov.totalRD)).toFixed(2)}
+                                </span>
+                                {parseFloat(mov.monto_usd) > 0 && (
+                                  <span className="block text-xs text-gray-400">
+                                    US$ {parseFloat(mov.monto_usd).toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
                               {esCashback && (
                                 <span className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700">Cashback</span>
                               )}
                               <span
                                 className={`text-xs px-2 py-0.5 rounded ${
-                                  mov.pagado
+                                  mov.pagado || mov.es_efectivo
                                     ? 'bg-green-100 text-green-700'
                                     : 'bg-yellow-100 text-yellow-700'
                                 }`}
                               >
-                                {mov.pagado ? 'Pagado' : 'Pendiente'}
+                                {mov.pagado || mov.es_efectivo ? 'Pagado' : 'Pendiente'}
                               </span>
                               <button
                                 onClick={() => handleEdit(mov)}

@@ -56,7 +56,7 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
             return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${day}`;
           })()
         : null,
-      pagado: esEfectivo ? false : form.pagado,
+      pagado: esEfectivo ? true : form.pagado,
     };
 
     try {

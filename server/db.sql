@@ -94,6 +94,7 @@ CREATE TABLE IF NOT EXISTS Movimiento (
   monto_rd DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   fecha_pago DATE DEFAULT NULL,
   pagado BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_movimiento_tipomovimiento FOREIGN KEY (tipoMovimiento_id) REFERENCES TipoMovimiento(id),
   CONSTRAINT fk_movimiento_periodo FOREIGN KEY (periodo_id) REFERENCES Periodo(id) ON DELETE CASCADE,
   CONSTRAINT fk_movimiento_metodo FOREIGN KEY (metodo_id) REFERENCES Metodo(id)
