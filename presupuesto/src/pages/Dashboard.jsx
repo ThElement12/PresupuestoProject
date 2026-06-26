@@ -93,15 +93,12 @@ export default function Dashboard() {
   }, [periodoActual]);
 
   const handleTogglePagado = async (movId, currentPagado) => {
-    setMovements((prev) =>
-      prev.map((m) => (m.id === movId ? { ...m, pagado: !currentPagado } : m))
-    );
     try {
       await api.editarMovimiento(movId, { pagado: !currentPagado });
-    } catch (err) {
       setMovements((prev) =>
-        prev.map((m) => (m.id === movId ? { ...m, pagado: currentPagado } : m))
+        prev.map((m) => (m.id === movId ? { ...m, pagado: !currentPagado } : m))
       );
+    } catch (err) {
       alert(err.message);
     }
   };
