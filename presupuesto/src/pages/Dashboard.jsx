@@ -622,7 +622,7 @@ export default function Dashboard() {
                       <div className="space-y-2">
                         {gastosFijos.map((mov) => {
                           const esCashback = parseFloat(mov.totalRD) < 0;
-                          const diaPago = mov.fecha_pago ? new Date(mov.fecha_pago + 'T00:00:00').getDate() : null;
+                          const diaPago = mov.fecha_pago ? new Date(String(mov.fecha_pago).substring(0, 10) + 'T00:00:00').getDate() : null;
                           return (
                           <div
                             key={mov.id}
@@ -646,7 +646,7 @@ export default function Dashboard() {
                               </span>
                               {diaPago && (
                                 <span className="text-xs text-blue-600 shrink-0">
-                                  Día {diaPago}
+                                  Cobro el día {diaPago} de c/mes
                                 </span>
                               )}
                             </div>
