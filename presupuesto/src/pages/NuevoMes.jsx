@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
+import { WarningCircle, Check } from '@phosphor-icons/react';
+import { Button, Input, Card } from '../components/ui';
 
 export default function NuevoMes() {
   const { usuario } = useAuth();
@@ -15,21 +17,23 @@ export default function NuevoMes() {
     porcentaje_ahorros: 20,
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const total = parseFloat(form.porcentaje_gastos) + parseFloat(form.porcentaje_gustos) + parseFloat(form.porcentaje_ahorros);
+  const isValid = total === 100;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    const total = parseFloat(form.porcentaje_gastos) + parseFloat(form.porcentaje_gustos) + parseFloat(form.porcentaje_ahorros);
-    if (total !== 100) {
+    if (!isValid) {
       return setError(`Los porcentajes deben sumar 100 (actual: ${total})`);
     }
-
+    setLoading(true);
     try {
       await api.crearMes({
         usuario_id: usuario.id,
@@ -43,6 +47,8 @@ export default function NuevoMes() {
       navigate('/dashboard');
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -50,115 +56,88 @@ export default function NuevoMes() {
     <div className="max-w-lg mx-auto">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Nuevo Ciclo de Presupuesto</h1>
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
+        <div className="flex items-center gap-2 bg-destructive-50 border border-destructive/20 text-destructive rounded-lg px-4 py-3 mb-4" role="alert">
+          <WarningCircle size={20} weight="fill" className="shrink-0" />
+          <span className="text-sm">{error}</span>
         </div>
       )}
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-gray-700 text-sm font-medium mb-1">
-              Fecha Inicio
-            </label>
-            <input
+      <Card>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Fecha Inicio"
               type="date"
               name="fecha_inicio_mes"
               value={form.fecha_inicio_mes}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
-          </div>
-          <div>
-            <label className="block text-gray-700 text-sm font-medium mb-1">
-              Fecha Fin
-            </label>
-            <input
+            <Input
+              label="Fecha Fin"
               type="date"
               name="fecha_fin_mes"
               value={form.fecha_fin_mes}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
-        </div>
 
-        <div>
-          <label className="block text-gray-700 text-sm font-medium mb-1">
-            ¿Cómo quieres dividir el ciclo?
-          </label>
-          <select
-            name="periodicidad"
-            value={form.periodicidad}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="mensual">Mensual — 1 periodo (todo el ciclo junto)</option>
-            <option value="quincenal">Quincenal — 2 periodos (primera y segunda quincena)</option>
-            <option value="semanal">Semanal — 4 o 5 periodos (una semana cada uno)</option>
-          </select>
-        </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              ¿Cómo quieres dividir el ciclo?
+            </label>
+            <select
+              name="periodicidad"
+              value={form.periodicidad}
+              onChange={handleChange}
+              className="w-full border border-muted rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+            >
+              <option value="mensual">Mensual — 1 periodo (todo el ciclo junto)</option>
+              <option value="quincenal">Quincenal — 2 periodos (primera y segunda quincena)</option>
+              <option value="semanal">Semanal — 4 o 5 periodos (una semana cada uno)</option>
+            </select>
+          </div>
 
-        <div className="border-t pt-4">
-          <h3 className="font-semibold text-gray-700 mb-1">¿Cómo distribuyes tus ingresos? (deben sumar 100%)</h3>
-          <p className="text-xs text-gray-400 mb-3">Define qué porcentaje de tu ingreso va a cada categoría.</p>
-          <div className="space-y-3">
-            <div>
-              <label className="block text-gray-700 text-sm font-medium mb-0.5">
-                Gastos Esenciales: {form.porcentaje_gastos}%
-              </label>
-              <p className="text-xs text-gray-400 mb-1">Alquiler, servicios, cuotas fijas, deudas...</p>
-              <input
-                type="range"
-                name="porcentaje_gastos"
-                value={form.porcentaje_gastos}
-                onChange={handleChange}
-                min="0"
-                max="100"
-                className="w-full"
-              />
+          <div className="border-t border-[#DBEAFE] pt-5">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-semibold text-gray-700">¿Cómo distribuyes tus ingresos?</h3>
+              <span className={`flex items-center gap-1 text-sm font-medium ${isValid ? 'text-accent-500' : 'text-destructive'}`}>
+                {isValid ? <Check size={16} weight="bold" /> : <WarningCircle size={16} />}
+                {total}%
+              </span>
             </div>
-            <div>
-              <label className="block text-gray-700 text-sm font-medium mb-0.5">
-                Gastos Variables: {form.porcentaje_gustos}%
-              </label>
-              <p className="text-xs text-gray-400 mb-1">Comida fuera, entretenimiento, caprichos...</p>
-              <input
-                type="range"
-                name="porcentaje_gustos"
-                value={form.porcentaje_gustos}
-                onChange={handleChange}
-                min="0"
-                max="100"
-                className="w-full"
-              />
-            </div>
-            <div>
-              <label className="block text-gray-700 text-sm font-medium mb-0.5">
-                Ahorros: {form.porcentaje_ahorros}%
-              </label>
-              <p className="text-xs text-gray-400 mb-1">Reservas, metas, emergencias...</p>
-              <input
-                type="range"
-                name="porcentaje_ahorros"
-                value={form.porcentaje_ahorros}
-                onChange={handleChange}
-                min="0"
-                max="100"
-                className="w-full"
-              />
+            <p className="text-xs text-gray-400 mb-4">Los porcentajes deben sumar 100%.</p>
+            <div className="space-y-4">
+              {[
+                { name: 'porcentaje_gastos', label: 'Gastos Esenciales', hint: 'Alquiler, servicios, cuotas fijas, deudas...', color: 'accent-destructive' },
+                { name: 'porcentaje_gustos', label: 'Gastos Variables', hint: 'Comida fuera, entretenimiento, caprichos...', color: 'accent-warning' },
+                { name: 'porcentaje_ahorros', label: 'Ahorros', hint: 'Reservas, metas, emergencias...', color: 'accent-accent' },
+              ].map(({ name, label, hint }) => (
+                <div key={name}>
+                  <div className="flex justify-between items-baseline mb-0.5">
+                    <label className="text-sm font-medium text-gray-700">{label}</label>
+                    <span className="text-sm font-semibold text-gray-800">{form[name]}%</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mb-1.5">{hint}</p>
+                  <input
+                    type="range"
+                    name={name}
+                    value={form[name]}
+                    onChange={handleChange}
+                    min="0"
+                    max="100"
+                    className="w-full accent-primary cursor-pointer"
+                  />
+                </div>
+              ))}
             </div>
           </div>
-        </div>
 
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
-        >
-          Crear Ciclo
-        </button>
-      </form>
+          <Button type="submit" className="w-full" size="lg" loading={loading}>
+            Crear Ciclo
+          </Button>
+        </form>
+      </Card>
     </div>
   );
 }

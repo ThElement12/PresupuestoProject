@@ -2,12 +2,17 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
+import { Plus, PencilSimple, Trash, CreditCard } from '@phosphor-icons/react';
+import { Button, Card, Input, EmptyState, ConfirmDialog } from '../components/ui';
 
 export default function Metodos() {
   const { usuario } = useAuth();
   const [metodos, setMetodos] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState('');
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const [error, setError] = useState('');
 
   const loadMetodos = () => {
     api.getMetodos(usuario.id).then(setMetodos).catch(console.error);
@@ -15,14 +20,15 @@ export default function Metodos() {
 
   useEffect(() => { loadMetodos(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleDelete = async (id) => {
-    if (!confirm('¿Borrar esta forma de pago?')) return;
+  const handleDelete = async () => {
     try {
-      await api.borrarMetodo(id);
+      await api.borrarMetodo(pendingDeleteId);
       loadMetodos();
     } catch (err) {
-      alert(err.message);
+      setError(err.message);
     }
+    setConfirmOpen(false);
+    setPendingDeleteId(null);
   };
 
   const handleEdit = async (id) => {
@@ -33,7 +39,7 @@ export default function Metodos() {
       setEditValue('');
       loadMetodos();
     } catch (err) {
-      alert(err.message);
+      setError(err.message);
     }
   };
 
@@ -41,70 +47,78 @@ export default function Metodos() {
     <div className="max-w-lg mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Formas de Pago</h1>
-        <Link
-          to="/metodo/nuevo"
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm"
-        >
-          Nuevo
+        <Link to="/metodo/nuevo">
+          <Button size="sm">
+            <Plus size={16} />
+            Nuevo
+          </Button>
         </Link>
       </div>
 
+      {error && (
+        <p className="text-sm text-destructive mb-4" role="alert">{error}</p>
+      )}
+
       {metodos.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
-          No tienes formas de pago registradas.
-        </div>
+        <EmptyState
+          icon={CreditCard}
+          title="Sin formas de pago"
+          description="No tienes formas de pago registradas. Agrega tu primera tarjeta o cuenta."
+          action={
+            <Link to="/metodo/nuevo">
+              <Button size="sm"><Plus size={16} /> Agregar</Button>
+            </Link>
+          }
+        />
       ) : (
         <div className="space-y-2">
           {metodos.map((m) => (
-            <div
-              key={m.id}
-              className="bg-white rounded-lg shadow p-4 flex items-center justify-between"
-            >
+            <Card key={m.id} className="p-4 flex items-center justify-between">
               {editingId === m.id ? (
                 <div className="flex items-center gap-2 flex-1">
-                  <input
-                    type="text"
+                  <Input
                     value={editValue}
                     onChange={(e) => setEditValue(e.target.value)}
-                    className="flex-1 border border-gray-300 rounded-md px-2 py-1"
                     autoFocus
+                    className="flex-1"
                   />
-                  <button
-                    onClick={() => handleEdit(m.id)}
-                    className="text-green-600 hover:text-green-800 text-sm"
-                  >
-                    Guardar
-                  </button>
-                  <button
-                    onClick={() => setEditingId(null)}
-                    className="text-gray-600 hover:text-gray-800 text-sm"
-                  >
-                    Cancelar
-                  </button>
+                  <Button size="sm" onClick={() => handleEdit(m.id)}>Guardar</Button>
+                  <Button variant="ghost" size="sm" onClick={() => setEditingId(null)}>Cancelar</Button>
                 </div>
               ) : (
                 <>
-                  <span className="text-gray-800">{m.metodo_pago}</span>
-                  <div className="flex gap-2">
+                  <span className="text-gray-800 font-medium">{m.metodo_pago}</span>
+                  <div className="flex gap-1">
                     <button
                       onClick={() => { setEditingId(m.id); setEditValue(m.metodo_pago); }}
-                      className="text-blue-600 hover:text-blue-800 text-sm"
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary-50 transition-colors cursor-pointer"
+                      aria-label="Editar forma de pago"
                     >
-                      Editar
+                      <PencilSimple size={16} />
                     </button>
                     <button
-                      onClick={() => handleDelete(m.id)}
-                      className="text-red-600 hover:text-red-800 text-sm"
+                      onClick={() => { setPendingDeleteId(m.id); setConfirmOpen(true); }}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-destructive hover:bg-destructive-50 transition-colors cursor-pointer"
+                      aria-label="Borrar forma de pago"
                     >
-                      Borrar
+                      <Trash size={16} />
                     </button>
                   </div>
                 </>
               )}
-            </div>
+            </Card>
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onConfirm={handleDelete}
+        onCancel={() => { setConfirmOpen(false); setPendingDeleteId(null); }}
+        title="¿Borrar esta forma de pago?"
+        description="Se eliminará permanentemente. Los movimientos asociados no serán afectados."
+        confirmText="Borrar"
+      />
     </div>
   );
 }

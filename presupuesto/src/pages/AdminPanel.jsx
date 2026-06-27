@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/client';
+import { Check, WarningCircle } from '@phosphor-icons/react';
+import { Button, Input, Card, CardTitle } from '../components/ui';
 
 export default function AdminPanel() {
   const [config, setConfig] = useState({ tasa_dolar: '0' });
   const [tasaInput, setTasaInput] = useState('');
   const [msg, setMsg] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     api.getConfig()
@@ -15,12 +19,17 @@ export default function AdminPanel() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMsg('');
+    setLoading(true);
     try {
       const res = await api.updateConfig(parseFloat(tasaInput));
       setConfig((prev) => ({ ...prev, tasa_dolar: String(res.tasa_dolar) }));
       setMsg('Tasa actualizada correctamente');
+      setIsSuccess(true);
     } catch (err) {
       setMsg(err.message);
+      setIsSuccess(false);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -28,44 +37,49 @@ export default function AdminPanel() {
     <div className="max-w-lg mx-auto">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Panel de Administración</h1>
 
-      <div className="bg-white rounded-lg shadow p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-700">Tasa del Dólar Global</h2>
-        <p className="text-sm text-gray-500">
+      <Card>
+        <CardTitle>Tasa del Dólar Global</CardTitle>
+        <p className="text-sm text-gray-500 mt-2">
           Esta tasa se usará para convertir todos los montos en USD a RD$ en los cálculos del dashboard.
         </p>
-        <p className="text-sm text-gray-500">
-          Tasa actual: <span className="font-semibold text-gray-800">{config.tasa_dolar}</span>
-        </p>
+        <div className="mt-4 mb-5">
+          <span className="text-sm text-gray-500">Tasa actual:</span>
+          <span className="ml-2 bg-primary-50 text-primary text-xl font-bold px-4 py-1.5 rounded-xl tabular-nums">
+            {Number(config.tasa_dolar).toFixed(2)}
+          </span>
+        </div>
 
         {msg && (
-          <div className={`px-4 py-2 rounded text-sm ${msg.includes('correctamente') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+          <div
+            className={`flex items-center gap-2 rounded-lg px-4 py-3 mb-4 text-sm ${
+              isSuccess
+                ? 'bg-accent-50 border border-accent/20 text-accent-500'
+                : 'bg-destructive-50 border border-destructive/20 text-destructive'
+            }`}
+            role="alert"
+          >
+            {isSuccess ? <Check size={18} weight="bold" /> : <WarningCircle size={18} weight="fill" />}
             {msg}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nueva tasa (RD$ por 1 USD)
-            </label>
-            <input
+            <Input
+              label="Nueva tasa (RD$ por 1 USD)"
               type="number"
               value={tasaInput}
               onChange={(e) => setTasaInput(e.target.value)}
               step="0.01"
               min="1"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
-          <button
-            type="submit"
-            className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
-          >
+          <Button type="submit" loading={loading} className="sm:mb-0">
             Actualizar
-          </button>
+          </Button>
         </form>
-      </div>
+      </Card>
     </div>
   );
 }

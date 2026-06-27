@@ -13,6 +13,7 @@ import Metodos from './pages/Metodos';
 import NuevoMetodo from './pages/NuevoMetodo';
 import AdminPanel from './pages/AdminPanel';
 import Ayuda from './pages/Ayuda';
+import LandingPage from './pages/LandingPage';
 
 function App() {
   return (
@@ -49,7 +50,7 @@ function App() {
             path="/ayuda"
             element={<ProtectedRoute><Layout><Ayuda /></Layout></ProtectedRoute>}
           />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>

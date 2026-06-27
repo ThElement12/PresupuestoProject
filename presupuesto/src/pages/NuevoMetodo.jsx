@@ -2,46 +2,48 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
+import { Button, Input, Card } from '../components/ui';
 
 export default function NuevoMetodo() {
   const { usuario } = useAuth();
   const navigate = useNavigate();
   const [metodoPago, setMetodoPago] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
     try {
       await api.crearMetodo({ usuario_id: usuario.id, metodo_pago: metodoPago });
       navigate('/metodos');
     } catch (err) {
-      alert(err.message);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="max-w-md mx-auto">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Nueva Forma de Pago</h1>
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-4">
-        <div>
-          <label className="block text-gray-700 text-sm font-medium mb-1">
-            Nombre
-          </label>
-          <input
+      <Card>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            label="Nombre"
             type="text"
             value={metodoPago}
             onChange={(e) => setMetodoPago(e.target.value)}
             placeholder="Ej: Tarjeta de Crédito BHD, Cuenta de Ahorros, PayPal..."
-            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            error={error}
             required
           />
-        </div>
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
-        >
-          Guardar
-        </button>
-      </form>
+          <Button type="submit" className="w-full" size="lg" loading={loading}>
+            Guardar
+          </Button>
+        </form>
+      </Card>
     </div>
   );
 }
