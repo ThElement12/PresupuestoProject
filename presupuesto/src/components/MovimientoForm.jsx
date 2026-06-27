@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/client';
+import { Button, Input } from './ui';
 
 const emptyForm = {
   tipoMovimiento_id: 1,
@@ -15,6 +16,7 @@ const emptyForm = {
 export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, initial }) {
   const [form, setForm] = useState(initial || emptyForm);
   const [tipos, setTipos] = useState([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     api.getTiposMovimiento().then(setTipos).catch(console.error);
@@ -41,6 +43,7 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     const data = {
       ...form,
       periodo_id: periodoId,
@@ -67,144 +70,107 @@ export default function MovimientoForm({ periodoId, metodos, onSave, onCancel, i
       }
       onSave();
     } catch (err) {
-      alert(err.message);
+      setError(err.message);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 bg-gray-50 p-4 rounded-lg">
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <p className="text-sm text-destructive" role="alert">{error}</p>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Tipo</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Tipo</label>
           <select
             name="tipoMovimiento_id"
             value={form.tipoMovimiento_id}
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm"
+            className="w-full border border-muted rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
           >
             {tipos.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.movimiento}
-              </option>
+              <option key={t.id} value={t.id}>{t.movimiento}</option>
             ))}
           </select>
         </div>
         {parseInt(form.tipoMovimiento_id) === 2 && (
           <div>
-            <label className="block text-sm font-medium text-gray-700">Forma de pago</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Forma de pago</label>
             <select
               name="metodo_id"
               value={form.metodo_id}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm"
+              className="w-full border border-muted rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
               required
             >
               <option value="">Seleccionar...</option>
               {metodos.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.metodo_pago}
-                </option>
+                <option key={m.id} value={m.id}>{m.metodo_pago}</option>
               ))}
             </select>
           </div>
         )}
       </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Descripción</label>
-        <input
-          type="text"
-          name="descripcion"
-          value={form.descripcion}
+      <Input
+        label="Descripción"
+        name="descripcion"
+        value={form.descripcion}
+        onChange={handleChange}
+        required
+      />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Input
+          label="Monto USD"
+          type="number"
+          name="monto_usd"
+          value={form.monto_usd}
           onChange={handleChange}
-          className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm"
-          required
+          step="0.01"
+          min={esGasto ? undefined : "0"}
+        />
+        <Input
+          label="Monto RD$"
+          type="number"
+          name="monto_rd"
+          value={form.monto_rd}
+          onChange={handleChange}
+          step="0.01"
+          min={esGasto ? undefined : "0"}
         />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Monto USD</label>
-          <input
-            type="number"
-            name="monto_usd"
-            value={form.monto_usd}
-            onChange={handleChange}
-            step="0.01"
-            min={esGasto ? undefined : "0"}
-            className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Monto RD$</label>
-          <input
-            type="number"
-            name="monto_rd"
-            value={form.monto_rd}
-            onChange={handleChange}
-            step="0.01"
-            min={esGasto ? undefined : "0"}
-            className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm"
-          />
-        </div>
-      </div>
       {esGasto && (
-        <p className="text-xs text-gray-400">
-          Usa valores negativos para cashbacks o descuentos.
-        </p>
+        <p className="text-xs text-gray-400">Usa valores negativos para cashbacks o descuentos.</p>
       )}
       {esGastoFijo && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Día de cobro</label>
-          <input
-            type="number"
-            name="diaCobro"
-            value={form.diaCobro}
-            onChange={handleChange}
-            min="1"
-            max="31"
-            className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm"
-            required
-          />
-        </div>
+        <Input
+          label="Día de cobro"
+          type="number"
+          name="diaCobro"
+          value={form.diaCobro}
+          onChange={handleChange}
+          min="1"
+          max="31"
+          required
+        />
       )}
       {!esEfectivo && (
         <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              name="isFijo"
-              checked={form.isFijo}
-              onChange={handleChange}
-            />
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input type="checkbox" name="isFijo" checked={form.isFijo} onChange={handleChange} className="accent-primary cursor-pointer" />
             ¿Se repite cada mes?
           </label>
           {parseInt(form.tipoMovimiento_id) !== 1 && (
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                name="pagado"
-                checked={form.pagado}
-                onChange={handleChange}
-              />
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" name="pagado" checked={form.pagado} onChange={handleChange} className="accent-primary cursor-pointer" />
               Pagado
             </label>
           )}
         </div>
       )}
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-1.5 rounded-md hover:bg-blue-700 text-sm"
-        >
-          {initial?.id ? 'Actualizar' : 'Agregar'}
-        </button>
+      <div className="flex gap-2 pt-2">
+        <Button type="submit">{initial?.id ? 'Actualizar' : 'Agregar'}</Button>
         {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="bg-gray-300 text-gray-700 px-4 py-1.5 rounded-md hover:bg-gray-400 text-sm"
-          >
-            Cancelar
-          </button>
+          <Button type="button" variant="secondary" onClick={onCancel}>Cancelar</Button>
         )}
       </div>
     </form>
