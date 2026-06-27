@@ -45,7 +45,7 @@ export default function AdminPanel() {
         <div className="mt-4 mb-5">
           <span className="text-sm text-gray-500">Tasa actual:</span>
           <span className="ml-2 bg-primary-50 text-primary text-xl font-bold px-4 py-1.5 rounded-xl tabular-nums">
-            {config.tasa_dolar}
+            {Number(config.tasa_dolar).toFixed(2)}
           </span>
         </div>
 
